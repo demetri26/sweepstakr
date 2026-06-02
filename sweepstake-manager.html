@@ -142,13 +142,18 @@
   /* BRACKET */
   .bracket-wrap { overflow-x: auto; padding-bottom: 20px; }
   .bracket { display: flex; align-items: stretch; user-select: none; }
-  .bracket-round { display: flex; flex-direction: column; min-width: 170px; }
-  .round-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); text-align: center; padding: 0 12px 14px; }
+  .bracket-round { display: flex; flex-direction: column; min-width: 190px; }
+  .round-label-wrap { display: flex; align-items: center; gap: 6px; padding: 0 12px 14px; justify-content: center; }
+  .round-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); text-align: center; }
+  .round-label-edit { font-size: 10px; background: transparent; border: none; border-bottom: 1px dashed var(--border); color: var(--text-muted); font-family: 'DM Sans', sans-serif; letter-spacing: 1px; text-transform: uppercase; outline: none; width: 110px; text-align: center; cursor: text; padding: 1px 4px; }
+  .round-label-edit:focus { border-bottom-color: var(--gold); color: var(--text); }
   .round-matches { display: flex; flex-direction: column; flex: 1; justify-content: space-around; }
   .match-slot { display: flex; align-items: center; padding: 6px 12px; position: relative; }
-  .match-card-b { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; width: 146px; flex-shrink: 0; cursor: pointer; transition: border-color 0.15s; }
-  .match-card-b:hover { border-color: var(--gold); }
-  .b-team { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; font-size: 12px; gap: 6px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .match-card-b { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; width: 166px; flex-shrink: 0; transition: border-color 0.15s; }
+  .match-card-b.editable { cursor: default; }
+  .match-card-b.clickable { cursor: pointer; }
+  .match-card-b.clickable:hover { border-color: var(--gold); }
+  .b-team { display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; font-size: 12px; gap: 6px; border-bottom: 1px solid var(--border); }
   .b-team:last-child { border-bottom: none; }
   .b-team.winner { background: rgba(240,180,41,0.1); }
   .b-team.winner .b-name { color: var(--gold); font-weight: 600; }
@@ -157,8 +162,17 @@
   .b-score { font-family: 'DM Mono', monospace; font-size: 12px; min-width: 20px; text-align: center; color: var(--text-muted); }
   .b-team.winner .b-score { color: var(--gold); }
   .bye-label { color: var(--text-muted); font-style: italic; font-size: 11px; }
-  /* connector lines between bracket rounds */
   .connector { width: 20px; flex-shrink: 0; position: relative; }
+  /* team slot selector inside bracket setup */
+  .slot-select { width: 100%; background: var(--surface2); border: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 8px; outline: none; cursor: pointer; }
+  .slot-select:focus { background: var(--surface3); }
+  .slot-select option { background: var(--surface2); }
+  /* bracket setup panel */
+  .bracket-setup { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .bracket-setup-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; margin-bottom: 14px; }
+  .setup-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .setup-match { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .setup-match-header { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); padding: 6px 10px; background: var(--surface3); border-bottom: 1px solid var(--border); }
 
   /* RESULTS */
   .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
@@ -540,52 +554,145 @@ function renderDraw(s) {
 // ══════════════════════════════════════════════
 // BRACKET
 // ══════════════════════════════════════════════
+function defaultRoundName(rIdx, totalRounds) {
+  const pos = totalRounds - 1 - rIdx; // 0 = final
+  if (pos === 0) return 'Final';
+  if (pos === 1) return 'Semi-Finals';
+  if (pos === 2) return 'Quarter-Finals';
+  const teams = Math.pow(2, pos + 1);
+  return `Round of ${teams}`;
+}
+
 function renderBracket(s) {
+  // ── SETUP MODE: no bracket yet ──
   if (!s.bracket || !s.bracket.rounds || !s.bracket.rounds.length) {
-    return `<div class="alert alert-warn">No bracket generated yet.</div>
-      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px">Assign teams in the Draw tab first, then generate your bracket.</p>
-      <button class="btn btn-primary" onclick="generateBracket()">🏆 Generate Knockout Bracket</button>`;
+    return renderBracketSetup(s);
   }
 
   const { rounds } = s.bracket;
-  const totalRounds = rounds.length;
-  const roundLabels = rounds.map((r, i) => {
-    const remaining = Math.pow(2, totalRounds - i);
-    if (i === totalRounds - 1) return 'Final';
-    if (remaining === 4) return 'Semi-Finals';
-    if (remaining === 8) return 'Quarter-Finals';
-    return `Round of ${remaining}`;
+  const editing = s.bracket.editing === true;
+
+  // ── EDIT MODE: show team selectors ──
+  if (editing) {
+    return renderBracketEdit(s);
+  }
+
+  // ── VIEW MODE: display bracket ──
+  return renderBracketView(s);
+}
+
+function renderBracketSetup(s) {
+  const teamCount = s.teams.filter(t => t.participant !== null && t.participant !== undefined).length;
+  // Suggest sensible round counts
+  const suggestions = [];
+  for (let r = 1; r <= 5; r++) {
+    const slots = Math.pow(2, r);
+    suggestions.push({ rounds: r, slots, label: r === 1 ? 'Final only (2 teams)' : defaultRoundName(0, r) + ` (up to ${slots} teams)` });
+  }
+
+  return `
+  <div class="alert alert-warn" style="margin-bottom:16px">No bracket set up yet. Configure it below.</div>
+  <div class="bracket-setup">
+    <div class="bracket-setup-title">Setup Bracket</div>
+    <div class="form-group">
+      <label>Number of Rounds</label>
+      <select id="setupRounds" style="max-width:320px">
+        ${suggestions.map(s => `<option value="${s.rounds}">${s.rounds} round${s.rounds>1?'s':''} — ${s.label}</option>`).join('')}
+      </select>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">You have <strong style="color:var(--text)">${teamCount}</strong> assigned team${teamCount!==1?'s':''}. You'll manually place teams into each match slot after creating the bracket.</p>
+    <button class="btn btn-primary" onclick="createBlankBracket()">Create Bracket →</button>
+  </div>`;
+}
+
+function renderBracketEdit(s) {
+  const { rounds } = s.bracket;
+  const assignedTeams = s.teams.map((t,i)=>({...t,idx:i})).filter(t => t.participant !== null && t.participant !== undefined);
+
+  let html = `
+  <div class="alert alert-info" style="margin-bottom:16px">✏️ Edit mode — set the teams for each match slot, then click <strong>Confirm Bracket</strong>.</div>
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="confirmBracketSetup()">✓ Confirm Bracket</button>
+    <button class="btn btn-danger btn-sm" onclick="clearBracket()">Discard & Reset</button>
+  </div>`;
+
+  rounds.forEach((round, rIdx) => {
+    const isFirst = rIdx === 0;
+    html += `<div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="section-title" style="margin:0">
+          <input class="round-label-edit" value="${esc(round.label || defaultRoundName(rIdx, rounds.length))}"
+            oninput="updateRoundLabel(${rIdx}, this.value)" title="Edit round name" />
+        </div>
+        ${isFirst ? `<button class="btn btn-ghost btn-sm" onclick="addMatchToRound(${rIdx})">+ Add Match</button>` : '<span style="font-size:11px;color:var(--text-muted)">Auto-populated from round 1</span>'}
+      </div>
+      <div class="setup-grid">`;
+
+    round.matches.forEach((match, mIdx) => {
+      const teamOptions = `<option value="">— TBD —</option>` +
+        assignedTeams.map(t => `<option value="${t.idx}" ${match.team1===t.idx||match.team2===t.idx?'disabled':''}>${esc(t.name)}</option>`).join('');
+
+      html += `<div class="setup-match">
+        <div class="setup-match-header">Match ${mIdx + 1}
+          ${isFirst && round.matches.length > 1 ? `<button onclick="removeMatchFromRound(${rIdx},${mIdx})" style="float:right;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px" title="Remove match">×</button>` : ''}
+        </div>
+        ${isFirst ? `
+        <select class="slot-select" onchange="setBracketSlot(${rIdx},${mIdx},0,this.value)" style="border-bottom:1px solid var(--border)">
+          ${buildTeamOptions(s, match.team1, match.team2, 0)}
+        </select>
+        <select class="slot-select" onchange="setBracketSlot(${rIdx},${mIdx},1,this.value)">
+          ${buildTeamOptions(s, match.team2, match.team1, 1)}
+        </select>` : `
+        <div style="padding:7px 10px;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border)">Winner of R1 Match ${mIdx*2+1}</div>
+        <div style="padding:7px 10px;font-size:12px;color:var(--text-muted)">Winner of R1 Match ${mIdx*2+2}</div>`}
+      </div>`;
+    });
+
+    html += `</div></div>`;
   });
 
-  let html = `<div style="display:flex;gap:8px;margin-bottom:16px">
-    <button class="btn btn-ghost btn-sm" onclick="generateBracket()">Regenerate Bracket</button>
-    <span style="font-size:12px;color:var(--text-muted);align-self:center">Click any match to enter result</span>
+  return html;
+}
+
+function buildTeamOptions(s, selectedIdx, otherIdx, slot) {
+  const assignedTeams = s.teams.map((t,i)=>({...t,idx:i})).filter(t => t.participant !== null && t.participant !== undefined);
+  return `<option value="">— TBD / BYE —</option>` +
+    assignedTeams.map(t => {
+      const isSelected = t.idx === selectedIdx;
+      const isOther = t.idx === otherIdx;
+      return `<option value="${t.idx}" ${isSelected ? 'selected' : ''} ${isOther ? 'disabled' : ''}>${esc(t.name)}</option>`;
+    }).join('');
+}
+
+function renderBracketView(s) {
+  const { rounds } = s.bracket;
+  let html = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-ghost btn-sm" onclick="enterBracketEditMode()">✏️ Edit Bracket</button>
+    <button class="btn btn-danger btn-sm" onclick="clearBracket()">Reset</button>
+    <span style="font-size:12px;color:var(--text-muted);align-self:center">Click any match to enter a result</span>
   </div>
   <div class="bracket-wrap"><div class="bracket">`;
 
   rounds.forEach((round, rIdx) => {
-    const matchCount = round.matches.length;
-
     html += `<div class="bracket-round">
-      <div class="round-label">${roundLabels[rIdx]}</div>
+      <div class="round-label-wrap"><span class="round-label">${esc(round.label || defaultRoundName(rIdx, rounds.length))}</span></div>
       <div class="round-matches">`;
 
     round.matches.forEach((match, mIdx) => {
       const t1 = (match.team1 !== null && match.team1 !== undefined) ? s.teams[match.team1] : null;
       const t2 = (match.team2 !== null && match.team2 !== undefined) ? s.teams[match.team2] : null;
       const w = match.winner;
-
       const c1 = w === 0 ? 'winner' : (w !== null && w !== undefined) ? 'loser' : '';
       const c2 = w === 1 ? 'winner' : (w !== null && w !== undefined) ? 'loser' : '';
 
       html += `<div class="match-slot">
-        <div class="match-card-b" onclick="openBracketResult(${rIdx},${mIdx})">
+        <div class="match-card-b clickable" onclick="openBracketResult(${rIdx},${mIdx})">
           <div class="b-team ${c1}">
-            <span class="b-name">${t1 ? esc(t1.name) : '<span class="bye-label">BYE</span>'}</span>
+            <span class="b-name">${t1 ? esc(t1.name) : '<span class="bye-label">TBD</span>'}</span>
             <span class="b-score">${match.score1 !== null && match.score1 !== undefined ? match.score1 : '—'}</span>
           </div>
           <div class="b-team ${c2}">
-            <span class="b-name">${t2 ? esc(t2.name) : '<span class="bye-label">BYE</span>'}</span>
+            <span class="b-name">${t2 ? esc(t2.name) : '<span class="bye-label">TBD</span>'}</span>
             <span class="b-score">${match.score2 !== null && match.score2 !== undefined ? match.score2 : '—'}</span>
           </div>
         </div>
@@ -593,24 +700,18 @@ function renderBracket(s) {
     });
 
     html += `</div></div>`;
-
-    // Add connector between rounds (not after last)
-    if (rIdx < rounds.length - 1) {
-      html += `<div class="connector"></div>`;
-    }
+    if (rIdx < rounds.length - 1) html += `<div class="connector"></div>`;
   });
 
   html += `</div></div>`;
 
-  // Champion display
-  const lastRound = rounds[rounds.length - 1];
-  const finalMatch = lastRound.matches[0];
+  // Champion banner
+  const finalMatch = rounds[rounds.length - 1].matches[0];
   if (finalMatch && finalMatch.winner !== null && finalMatch.winner !== undefined) {
     const champIdx = finalMatch.winner === 0 ? finalMatch.team1 : finalMatch.team2;
     const champ = champIdx !== null && champIdx !== undefined ? s.teams[champIdx] : null;
     if (champ) {
-      const pIdx = champ.participant;
-      const p = (pIdx !== null && pIdx !== undefined) ? s.participants[pIdx] : null;
+      const p = champ.participant !== null && champ.participant !== undefined ? s.participants[champ.participant] : null;
       html += `<div style="margin-top:20px;text-align:center;padding:20px;background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.3);border-radius:var(--radius)">
         <div style="font-size:32px;margin-bottom:6px">🏆</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--gold)">Champion: ${esc(champ.name)}</div>
@@ -949,44 +1050,108 @@ function confirmAssign() {
 }
 
 // ══════════════════════════════════════════════
-// BRACKET GENERATION
+// BRACKET MANAGEMENT (MANUAL)
 // ══════════════════════════════════════════════
-function generateBracket() {
+function blankMatch() {
+  return { team1: null, team2: null, score1: null, score2: null, winner: null };
+}
+
+function createBlankBracket() {
   const s = getActive();
   if (!s) return;
-  if (!confirm(s.bracket ? 'Regenerate bracket? Existing results will be lost.' : 'Generate bracket?')) return;
-
-  const active = s.teams.map((_,i)=>i).filter(i => s.teams[i].status !== 'eliminated' && s.teams[i].participant !== null && s.teams[i].participant !== undefined);
-  if (active.length < 2) { alert('Need at least 2 assigned teams to generate a bracket.'); return; }
-
-  // Pad to next power of 2
-  let size = 1;
-  while (size < active.length) size *= 2;
-  const seeded = [...active];
-  // Shuffle
-  for (let i = seeded.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [seeded[i],seeded[j]]=[seeded[j],seeded[i]]; }
-  while (seeded.length < size) seeded.push(null); // BYEs
+  const numRounds = parseInt(document.getElementById('setupRounds').value);
+  if (!numRounds || numRounds < 1) return;
 
   const rounds = [];
-  let current = seeded;
-
-  while (current.length >= 2) {
-    const matches = [];
-    for (let i = 0; i < current.length; i += 2) {
-      const m = { team1: current[i], team2: current[i+1], score1: null, score2: null, winner: null };
-      // Auto-advance byes
-      if (m.team1 === null && m.team2 !== null) m.winner = 1;
-      else if (m.team2 === null && m.team1 !== null) m.winner = 0;
-      else if (m.team1 === null && m.team2 === null) { m.winner = null; }
-      matches.push(m);
-    }
-    rounds.push({ matches });
-    if (current.length === 2) break;
-    current = matches.map(() => null); // placeholders for next round
+  for (let r = 0; r < numRounds; r++) {
+    const matchCount = Math.pow(2, numRounds - 1 - r);
+    const matches = Array.from({ length: matchCount }, blankMatch);
+    rounds.push({ label: defaultRoundName(r, numRounds), matches });
   }
 
-  s.bracket = { rounds };
-  s.teams.forEach(t => { if (t.status !== 'pending') t.status = 'active'; });
+  s.bracket = { rounds, editing: true };
+  s.teams.forEach(t => { if (t.participant !== null && t.participant !== undefined) t.status = 'active'; });
+  save(); renderMain();
+}
+
+function enterBracketEditMode() {
+  const s = getActive();
+  if (!s || !s.bracket) return;
+  s.bracket.editing = true;
+  save(); renderMain();
+}
+
+function clearBracket() {
+  const s = getActive();
+  if (!s || !confirm('Reset the bracket? All results will be lost.')) return;
+  s.bracket = null;
+  s.teams.forEach(t => { if (t.participant !== null && t.participant !== undefined) t.status = 'active'; });
+  save(); renderMain();
+}
+
+function updateRoundLabel(rIdx, value) {
+  const s = getActive();
+  if (!s || !s.bracket) return;
+  s.bracket.rounds[rIdx].label = value;
+  save();
+}
+
+function setBracketSlot(rIdx, mIdx, slot, value) {
+  const s = getActive();
+  if (!s || !s.bracket) return;
+  const match = s.bracket.rounds[rIdx].matches[mIdx];
+  const teamIdx = value === '' ? null : parseInt(value);
+  if (slot === 0) match.team1 = teamIdx;
+  else match.team2 = teamIdx;
+  // Clear result if teams changed
+  match.score1 = null; match.score2 = null; match.winner = null;
+  save(); renderTab(); // re-render just the tab to refresh disabled options
+}
+
+function addMatchToRound(rIdx) {
+  const s = getActive();
+  if (!s || !s.bracket) return;
+  s.bracket.rounds[rIdx].matches.push(blankMatch());
+  // Ensure subsequent rounds have enough slots
+  rebuildLaterRounds(s);
+  save(); renderMain();
+}
+
+function removeMatchFromRound(rIdx, mIdx) {
+  const s = getActive();
+  if (!s || !s.bracket) return;
+  if (s.bracket.rounds[rIdx].matches.length <= 1) { alert('A round must have at least one match.'); return; }
+  s.bracket.rounds[rIdx].matches.splice(mIdx, 1);
+  rebuildLaterRounds(s);
+  save(); renderMain();
+}
+
+function rebuildLaterRounds(s) {
+  // After round 0 changes, rebuild subsequent rounds to have correct match counts
+  const rounds = s.bracket.rounds;
+  for (let r = 1; r < rounds.length; r++) {
+    const needed = Math.ceil(rounds[r-1].matches.length / 2);
+    const current = rounds[r].matches.length;
+    if (current < needed) {
+      for (let i = current; i < needed; i++) rounds[r].matches.push(blankMatch());
+    } else if (current > needed) {
+      rounds[r].matches.splice(needed);
+    }
+    // Clear team slots for auto-populated rounds
+    rounds[r].matches.forEach(m => { m.team1 = null; m.team2 = null; m.score1 = null; m.score2 = null; m.winner = null; });
+  }
+}
+
+function confirmBracketSetup() {
+  const s = getActive();
+  if (!s || !s.bracket) return;
+  // Validate: round 1 must have all matches with at least one team
+  const r0 = s.bracket.rounds[0];
+  const empty = r0.matches.filter(m => m.team1 === null && m.team2 === null);
+  if (empty.length > 0) {
+    if (!confirm(`${empty.length} match${empty.length>1?'es have':' has'} no teams assigned. Continue anyway?`)) return;
+  }
+  s.bracket.editing = false;
   save(); renderMain();
 }
 
@@ -1038,13 +1203,20 @@ function saveBracketResult() {
   const winnerIdx = match.winner === 0 ? match.team1 : match.team2;
   const loserIdx  = match.winner === 0 ? match.team2 : match.team1;
   if (loserIdx !== null && loserIdx !== undefined) s.teams[loserIdx].status = 'eliminated';
+  if (winnerIdx !== null && winnerIdx !== undefined) s.teams[winnerIdx].status = 'active';
 
   // Advance winner to next round slot
   const nextRound = s.bracket.rounds[rIdx + 1];
   if (nextRound) {
     const nextMatchIdx = Math.floor(mIdx / 2);
     const slot = mIdx % 2 === 0 ? 'team1' : 'team2';
-    if (nextRound.matches[nextMatchIdx]) nextRound.matches[nextMatchIdx][slot] = winnerIdx;
+    if (nextRound.matches[nextMatchIdx]) {
+      nextRound.matches[nextMatchIdx][slot] = winnerIdx;
+      // Clear that match's result since a team changed
+      nextRound.matches[nextMatchIdx].score1 = null;
+      nextRound.matches[nextMatchIdx].score2 = null;
+      nextRound.matches[nextMatchIdx].winner = null;
+    }
   }
 
   save();
