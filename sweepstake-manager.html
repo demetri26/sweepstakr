@@ -184,7 +184,9 @@
   .group-table th { padding: 6px 10px; color: var(--text-muted); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; border-bottom: 1px solid var(--border); }
   .group-table th:first-child { text-align: left; }
   .group-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); text-align: center; }
-  .group-table td:first-child { text-align: left; font-weight: 500; }
+  .group-table td:first-child { text-align: left; font-weight: 500; max-width: 0; }
+  .gt-team-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+  .gt-participant { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; margin-top: 1px; font-weight: 400; opacity: 0.9; }
   .group-table tr:last-child td { border-bottom: none; }
   .group-table tr.qualified td:first-child { border-left: 3px solid var(--green); padding-left: 7px; }
   .group-table tr.qualified-3rd td:first-child { border-left: 3px solid var(--gold); padding-left: 7px; }
@@ -1540,10 +1542,15 @@ function renderGroupView(s) {
       const is3rd = !isQual && pos === setup.qualifyPer && best3rdTeams.has(row.teamIdx);
       const rowClass = isQual ? 'qualified' : is3rd ? 'qualified-3rd' : '';
       const team = s.teams[row.teamIdx];
+      const pIdx = team?.participant ?? null;
+      const p = pIdx !== null ? s.participants[pIdx] : null;
       const gdVal = row.gd > 0 ? '+'+row.gd : row.gd;
       const gdClass = row.gd > 0 ? 'pos' : row.gd < 0 ? 'neg' : '';
       html += `<tr class="${rowClass}">
-        <td>${team ? esc(team.name) : '—'}</td>
+        <td>
+          <div class="gt-team-name">${team ? esc(team.name) : '—'}</div>
+          ${p ? `<div class="gt-participant" style="color:${colorFor(pIdx)}">${esc(p.name)}</div>` : ''}
+        </td>
         <td>${row.p}</td><td>${row.w}</td><td>${row.d}</td><td>${row.l}</td>
         <td class="gd-cell ${gdClass}">${row.p > 0 ? gdVal : '—'}</td>
         <td class="pts-cell">${row.pts}</td>
