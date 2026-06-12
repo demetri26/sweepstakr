@@ -1535,7 +1535,7 @@ function renderGroupView(s) {
         <button class="assign-btn" onclick="toggleFixtures(${gIdx})" id="fixtureToggle${gIdx}">▼ Fixtures</button>
       </div>
       <table class="group-table">
-        <thead><tr><th>Team</th><th title="Played">P</th><th title="Won">W</th><th title="Drawn">D</th><th title="Lost">L</th><th title="Goal Difference">GD</th><th title="Points">Pts</th></tr></thead>
+        <thead><tr><th>Team</th><th title="Played">P</th><th title="Won">W</th><th title="Drawn">D</th><th title="Lost">L</th><th title="Goal Difference">GD</th><th title="Goals For : Goals Against">GF:GA</th><th title="Points">Pts</th></tr></thead>
         <tbody>`;
     st.forEach((row, pos) => {
       const isQual = pos < setup.qualifyPer;
@@ -1553,6 +1553,7 @@ function renderGroupView(s) {
         </td>
         <td>${row.p}</td><td>${row.w}</td><td>${row.d}</td><td>${row.l}</td>
         <td class="gd-cell ${gdClass}">${row.p > 0 ? gdVal : '—'}</td>
+        <td class="gd-cell" style="font-size:11px">${row.p > 0 ? `${row.gf}:${row.ga}` : '—'}</td>
         <td class="pts-cell">${row.pts}</td>
       </tr>`;
     });
