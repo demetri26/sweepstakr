@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sweepstake Manager</title>
+<title>Sweepstakr</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <style>
   :root {
     --bg: #0f0e0c;
@@ -261,6 +262,44 @@
   .status-dot.complete { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
   .no-data { color: var(--text-muted); font-size: 13px; padding: 30px 0; text-align: center; }
   .hidden { display: none !important; }
+  .field-error { color: var(--red); font-size: 11px; margin-top: 5px; }
+
+  /* SHARE BANNER */
+  .share-banner { background: rgba(240,180,41,0.1); border-bottom: 1px solid rgba(240,180,41,0.3); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .share-banner-text { font-size: 12px; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+  .share-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface3); border: 1px solid var(--border); border-radius: 999px; padding: 10px 20px; font-size: 13px; color: var(--green); z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+  .share-toast.show { opacity: 1; }
+
+  /* MOBILE */
+  @media (max-width: 700px) {
+    .app { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
+    .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; align-items: center; flex-wrap: wrap; overflow: visible; }
+    .sidebar-header { padding: 12px 16px; border-bottom: none; border-right: 1px solid var(--border); flex-shrink: 0; }
+    .logo { font-size: 20px; }
+    .logo-sub { display: none; }
+    .sidebar-list { flex: 1; overflow-x: auto; overflow-y: hidden; padding: 8px 0; display: flex; align-items: center; }
+    .sidebar-section-label { display: none; }
+    #sweepItems { display: flex; flex-direction: row; gap: 4px; padding: 0 8px; }
+    .sweep-item { padding: 6px 12px; border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; flex-shrink: 0; }
+    .sweep-item.active { border-left-color: transparent; border-bottom-color: var(--gold); }
+    .btn-new { margin: 8px; width: auto; flex-shrink: 0; padding: 8px 14px; white-space: nowrap; }
+    .main { overflow: visible; }
+    .topbar { position: static; flex-direction: column; align-items: flex-start; padding: 12px 14px; gap: 10px; }
+    .topbar > div:last-child { width: 100%; overflow-x: auto; }
+    .tab-bar { overflow-x: auto; width: 100%; }
+    .tab { white-space: nowrap; flex-shrink: 0; }
+    .content { padding: 14px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .groups-grid { grid-template-columns: 1fr; }
+    .results-grid { grid-template-columns: 1fr; }
+    .modal { padding: 20px 16px; }
+    .form-row { grid-template-columns: 1fr; }
+    .bracket-wrap { overflow-x: auto; }
+    .bracket-round { min-width: 150px; }
+    .match-card-b { width: 130px; }
+    .danger-zone { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .topbar-left { flex-wrap: wrap; }
+  }
   @media (max-width: 800px) {
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .topbar { padding: 12px 16px; }
@@ -269,6 +308,7 @@
 </style>
 </head>
 <body>
+<div class="share-toast" id="shareToast">🔗 Link copied to clipboard!</div>
 <div class="app">
 
   <!-- SIDEBAR -->
@@ -301,6 +341,16 @@
 <div class="modal-overlay hidden" id="sweepModal">
   <div class="modal">
     <div class="modal-title" id="sweepModalTitle">New Sweepstake</div>
+
+    <div class="form-group" id="templateGroup">
+      <label>Start from Template <span class="tag">optional</span></label>
+      <select id="templateSelect" onchange="applyTemplate(this.value)" style="max-width:100%">
+        <option value="">— Start blank —</option>
+        <option value="wc2026">&#127757; FIFA World Cup 2026</option>
+      </select>
+      <div id="templateInfo" style="font-size:11px;color:var(--text-muted);margin-top:5px"></div>
+    </div>
+    <hr class="divider">
 
     <div class="form-group">
       <label>Competition Name</label>
@@ -473,6 +523,7 @@ function renderMain() {
           ).join('')}
         </div>
         <button class="btn btn-ghost btn-sm" onclick="openEditModal()">Edit</button>
+        <button class="btn btn-primary btn-sm" onclick="shareSweepstake()">🔗 Share</button>
       </div>
     </div>
     <div class="content" id="tabContent"></div>`;
@@ -574,10 +625,10 @@ function renderDraw(s) {
   const unassigned = s.teams.filter(t => t.participant === null || t.participant === undefined).length;
   return `
   <div class="draw-toolbar">
-    <button class="btn btn-primary btn-sm" onclick="doRandomDraw()">🎲 Random Draw</button>
+    <button class="btn btn-ghost btn-sm" onclick="doRandomDraw()">🎲 Random Draw</button>
     <button class="btn btn-ghost btn-sm" onclick="doSeededDraw()">🎯 Seeded Draw</button>
     ${unassigned > 0 ? `<button class="btn btn-ghost btn-sm" onclick="doRandomDrawUnassigned()">Random Unassigned (${unassigned})</button>` : ''}
-    <button class="btn btn-ghost btn-sm" onclick="clearAllAssignments()">Clear All</button>
+    <button class="btn btn-danger btn-sm" onclick="clearAllAssignments()">Clear All</button>
   </div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;margin-bottom:12px;font-size:12px;color:var(--text-muted)">
     💡 <strong style="color:var(--text)">Seeded Draw</strong> distributes teams so each participant receives an even spread of seeded teams. Assign seed numbers (1 = best) in the table below, then click Seeded Draw.
@@ -894,8 +945,11 @@ function renderPayouts(s) {
   </div>
 
   <div class="section-title">Participant Summary</div>
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+    "Winnings" shows confirmed payouts based on bracket results. Until results are recorded it shows <strong style="color:var(--text)">—</strong>.
+  </div>
   <table class="data-table">
-    <thead><tr><th>Participant</th><th>Teams</th><th>Entry Paid</th><th>Potential Win</th></tr></thead>
+    <thead><tr><th>Participant</th><th>Teams</th><th>Entry Paid</th><th>Winnings</th></tr></thead>
     <tbody>
     ${s.participants.map((p, pIdx) => {
       const myTeams = s.teams.filter(t => t.participant === pIdx);
@@ -941,6 +995,10 @@ function openNewModal() {
   document.getElementById('feeSymbol').textContent = '£';
   document.getElementById('sweepModalTitle').textContent = 'New Sweepstake';
   document.getElementById('sweepSaveBtn').textContent = 'Create Sweepstake';
+  document.getElementById('templateSelect').value = '';
+  document.getElementById('templateSelect').dataset.key = '';
+  document.getElementById('templateInfo').textContent = '';
+  document.getElementById('templateGroup').style.display = '';
   renderSplitRows(); renderTeamInputs(); renderParticipantInputs();
   openModal('sweepModal');
 }
@@ -958,6 +1016,7 @@ function openEditModal() {
   document.getElementById('feeSymbol').textContent = s.currency;
   document.getElementById('sweepModalTitle').textContent = 'Edit Sweepstake';
   document.getElementById('sweepSaveBtn').textContent = 'Save Changes';
+  document.getElementById('templateGroup').style.display = 'none';
   renderSplitRows(); renderTeamInputs(); renderParticipantInputs();
   openModal('sweepModal');
 }
@@ -1014,9 +1073,28 @@ function saveSweepstake() {
   const name = document.getElementById('sweepName').value.trim();
   const fee = document.getElementById('sweepFee').value || '0';
   const currency = document.getElementById('sweepCurrency').value.trim() || '£';
-  if (!name) { alert('Please enter a competition name.'); return; }
+
+  // Clear previous errors
+  document.querySelectorAll('.field-error').forEach(e => e.remove());
+
+  let hasError = false;
+
+  if (!name) {
+    showFieldError('sweepName', 'Please enter a competition name.');
+    hasError = true;
+  }
+
   const total = splitRows.reduce((a, sp) => a + (parseFloat(sp.pct)||0), 0);
-  if (Math.abs(total - 100) > 0.01) { alert(`Prize split must total 100% (currently ${total.toFixed(1)}%).`); return; }
+  if (Math.abs(total - 100) > 0.01) {
+    const el = document.getElementById('splitTotal');
+    const err = document.createElement('div');
+    err.className = 'field-error';
+    err.textContent = `Split must total 100% — currently ${total.toFixed(1)}%`;
+    el.after(err);
+    hasError = true;
+  }
+
+  if (hasError) return;
 
   const teams = teamInputs.filter(t => t.trim()).map(t => ({ name: t.trim(), status: 'pending', participant: null }));
   const participants = participantInputs.filter(p => p.trim()).map(p => ({ name: p.trim() }));
@@ -1037,8 +1115,10 @@ function saveSweepstake() {
       split: splitRows.map(s=>({...s})),
       teams, participants,
       status: 'draft',
-      bracket: null
+      bracket: null,
+      groups: null
     };
+    applyPendingTemplate(newSweep);
     state.sweepstakes.push(newSweep);
     state.activeSweepId = newSweep.id;
     currentTab = 'overview';
@@ -1048,6 +1128,17 @@ function saveSweepstake() {
   closeModal('sweepModal');
   renderSidebar();
   renderMain();
+}
+
+function showFieldError(inputId, msg) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.style.borderColor = 'var(--red)';
+  const err = document.createElement('div');
+  err.className = 'field-error';
+  err.textContent = msg;
+  el.after(err);
+  el.addEventListener('input', () => { el.style.borderColor = ''; err.remove(); }, { once: true });
 }
 
 // ══════════════════════════════════════════════
@@ -1083,9 +1174,9 @@ function doRandomDrawUnassigned() {
 
 function clearAllAssignments() {
   const s = getActive();
-  if (!s || !confirm('Clear all team assignments?')) return;
+  if (!s) return;
   s.teams.forEach(t => { t.participant = null; t.status = 'pending'; });
-  save(); renderMain();
+  save(); renderTab();
 }
 
 function setTeamSeed(teamIdx, value) {
@@ -1210,15 +1301,15 @@ function enterBracketEditMode() {
   const s = getActive();
   if (!s || !s.bracket) return;
   s.bracket.editing = true;
-  save(); renderMain();
+  save(); renderTab();
 }
 
 function clearBracket() {
   const s = getActive();
-  if (!s || !confirm('Reset the bracket? All results will be lost.')) return;
+  if (!s) return;
   s.bracket = null;
   s.teams.forEach(t => { if (t.participant !== null && t.participant !== undefined) t.status = 'active'; });
-  save(); renderMain();
+  save(); renderTab();
 }
 
 function updateRoundLabel(rIdx, value) {
@@ -1277,14 +1368,8 @@ function rebuildLaterRounds(s) {
 function confirmBracketSetup() {
   const s = getActive();
   if (!s || !s.bracket) return;
-  // Validate: round 1 must have all matches with at least one team
-  const r0 = s.bracket.rounds[0];
-  const empty = r0.matches.filter(m => m.team1 === null && m.team2 === null);
-  if (empty.length > 0) {
-    if (!confirm(`${empty.length} match${empty.length>1?'es have':' has'} no teams assigned. Continue anyway?`)) return;
-  }
   s.bracket.editing = false;
-  save(); renderMain();
+  save(); renderTab();
 }
 
 // ══════════════════════════════════════════════
@@ -1462,7 +1547,7 @@ function createGroups() {
     fixtures: []
   }));
   s.groups = { setup: { qualifyPer, best3rd, ptsWin, ptsDraw }, groups, editing: true };
-  save(); renderMain();
+  save(); currentTab = 'groups'; renderMain();
 }
 
 function renderGroupEdit(s) {
@@ -1695,22 +1780,21 @@ function confirmGroups() {
   if (!s || !s.groups) return;
   s.groups.groups.forEach(g => { g.fixtures = generateFixtures(g); });
   s.groups.editing = false;
-  save(); renderMain();
+  save(); renderTab();
 }
 
 function enterGroupEditMode() {
   const s = getActive();
   if (!s || !s.groups) return;
-  if (!confirm('Re-enter edit mode? Fixture results will be preserved where team slots are unchanged.')) return;
   s.groups.editing = true;
-  save(); renderMain();
+  save(); renderTab();
 }
 
 function resetGroups() {
   const s = getActive();
-  if (!s || !confirm('Reset the entire group stage? All results will be lost.')) return;
+  if (!s) return;
   s.groups = null;
-  save(); renderMain();
+  save(); renderTab();
 }
 
 function updateGroupName(gIdx, val) {
@@ -1751,8 +1835,218 @@ function removeGroup(gIdx) {
 }
 
 // ══════════════════════════════════════════════
-// MODAL HELPERS
+// SHARE — URL-based state encoding
 // ══════════════════════════════════════════════
+let readOnlyMode = false;
+let readOnlySweep = null;
+
+function shareSweepstake() {
+  const s = getActive();
+  if (!s) return;
+  try {
+    const json = JSON.stringify(s);
+    const compressed = LZString.compressToEncodedURIComponent(json);
+    const url = `${location.href.split('#')[0]}#share=${compressed}`;
+    navigator.clipboard.writeText(url).then(() => showToast('🔗 Link copied to clipboard!'))
+      .catch(() => {
+        // Fallback: prompt with the URL
+        prompt('Copy this link to share:', url);
+      });
+  } catch(e) {
+    alert('Could not generate share link. The sweepstake may be too large.');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('shareToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function checkShareURL() {
+  const hash = location.hash;
+  if (!hash.startsWith('#share=')) return false;
+  try {
+    const compressed = hash.slice(7);
+    const json = LZString.decompressFromEncodedURIComponent(compressed);
+    if (!json) throw new Error('Decompress failed');
+    const sweep = JSON.parse(json);
+    readOnlyMode = true;
+    readOnlySweep = sweep;
+    renderReadOnly(sweep);
+    return true;
+  } catch(e) {
+    document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f0e0c;color:#f87171;font-family:sans-serif;text-align:center;padding:20px">
+      <div><div style="font-size:48px;margin-bottom:16px">⚠️</div><div style="font-size:18px;margin-bottom:8px">Invalid share link</div><div style="font-size:13px;opacity:0.6">The link may be corrupted or incomplete.</div></div>
+    </div>`;
+    return true;
+  }
+}
+
+function renderReadOnly(s) {
+  const pot = s.participants.length * parseFloat(s.fee || 0);
+  const assigned = s.teams.filter(t => t.participant !== null && t.participant !== undefined).length;
+
+  document.body.innerHTML = `
+  <div id="shareToast" class="share-toast"></div>
+  <div style="background:var(--bg);min-height:100vh;font-family:'DM Sans',sans-serif;color:var(--text)">
+    <div class="share-banner">
+      <div class="share-banner-text">👁 View-only snapshot · ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
+      <div style="font-size:12px;color:var(--text-muted)">The organiser reshares this link when scores update</div>
+    </div>
+    <div style="max-width:900px;margin:0 auto;padding:24px 16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--gold)">🏆 ${esc(s.name)}</div>
+        <span class="tag">${(s.status||'draft').toUpperCase()}</span>
+      </div>
+
+      <div class="stats-grid" style="margin-bottom:24px">
+        <div class="stat-card"><div class="stat-label">Prize Pot</div><div class="stat-value">${s.currency}${pot.toFixed(0)}</div><div class="stat-sub">${s.participants.length} × ${fmt(s.currency,s.fee)}</div></div>
+        <div class="stat-card"><div class="stat-label">Teams</div><div class="stat-value">${s.teams.length}</div><div class="stat-sub">${assigned} assigned</div></div>
+        <div class="stat-card"><div class="stat-label">Participants</div><div class="stat-value">${s.participants.length}</div><div class="stat-sub">${fmt(s.currency,s.fee)} entry each</div></div>
+        <div class="stat-card"><div class="stat-label">Draw</div><div class="stat-value" style="font-size:20px;padding-top:4px;color:${assigned===s.teams.length&&s.teams.length>0?'var(--green)':'var(--gold)'}">${assigned===s.teams.length&&s.teams.length>0?'✓ Done':'⏳ Pending'}</div></div>
+      </div>
+
+      <div class="section-title">Participants & Teams</div>
+      <table class="data-table" style="margin-bottom:24px">
+        <thead><tr><th>Participant</th><th>Teams</th></tr></thead>
+        <tbody>
+        ${s.participants.map((p,i)=>{
+          const myTeams = s.teams.filter(t=>t.participant===i);
+          return `<tr>
+            <td><div class="participant-badge"><div class="avatar" style="background:${colorFor(i)};color:#0f0e0c">${initials(p.name)}</div>${esc(p.name)}</div></td>
+            <td style="font-size:12px">${myTeams.map(t=>`<span style="margin-right:6px;opacity:${t.status==='eliminated'?0.4:1};text-decoration:${t.status==='eliminated'?'line-through':'none'}">${esc(t.name)}</span>`).join('')||'<span style="color:var(--text-muted)">None</span>'}</td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+
+      <div class="section-title">Payouts</div>
+      <div class="payout-card" style="margin-bottom:24px">
+        ${(()=>{
+          const placed=[];
+          if(s.bracket&&s.bracket.rounds&&s.bracket.rounds.length){
+            const rounds=s.bracket.rounds;
+            const finalMatch=rounds[rounds.length-1].matches[0];
+            if(finalMatch&&finalMatch.winner!==null&&finalMatch.winner!==undefined){
+              placed[0]=finalMatch.winner===0?finalMatch.team1:finalMatch.team2;
+              placed[1]=finalMatch.winner===0?finalMatch.team2:finalMatch.team1;
+            }
+            if(rounds.length>=2){
+              rounds[rounds.length-2].matches.forEach(m=>{
+                if(m.winner!==null&&m.winner!==undefined){
+                  const loser=m.winner===0?m.team2:m.team1;
+                  if(loser!==null&&loser!==undefined&&!placed.includes(loser))placed.push(loser);
+                }
+              });
+            }
+          }
+          return s.split.map((sp,i)=>{
+            const amount=pot*sp.pct/100;
+            const champIdx=placed[i];
+            const team=champIdx!==undefined?s.teams[champIdx]:null;
+            const pIdx=team?team.participant:null;
+            const participant=(pIdx!==null&&pIdx!==undefined)?s.participants[pIdx]:null;
+            return `<div class="payout-row">
+              <div class="payout-left"><span class="place-medal">${MEDALS[i]||'🏅'}</span>
+              <div><div class="payout-label">${esc(sp.label)}</div>
+              <div class="payout-winner">${team?`${esc(team.name)}${participant?` · ${esc(participant.name)}`:''}`:'<em>To be determined</em>'}</div></div></div>
+              <div style="text-align:right"><div class="payout-amount">${fmt(s.currency,amount)}</div><div class="payout-pct">${sp.pct}%</div></div>
+            </div>`;
+          }).join('');
+        })()}
+      </div>
+
+      ${s.bracket&&s.bracket.rounds&&s.bracket.rounds.length&&!s.bracket.editing ? `
+      <div class="section-title">Bracket</div>
+      <div class="bracket-wrap"><div class="bracket">
+      ${(()=>{
+        const {rounds}=s.bracket;
+        return rounds.map((round,rIdx)=>{
+          let html=`<div class="bracket-round"><div class="round-label-wrap"><span class="round-label">${esc(round.label||defaultRoundName(rIdx,rounds.length))}</span></div><div class="round-matches">`;
+          round.matches.forEach((match,mIdx)=>{
+            const t1=(match.team1!==null&&match.team1!==undefined)?s.teams[match.team1]:null;
+            const t2=(match.team2!==null&&match.team2!==undefined)?s.teams[match.team2]:null;
+            const w=match.winner;
+            const c1=w===0?'winner':(w!==null&&w!==undefined)?'loser':'';
+            const c2=w===1?'winner':(w!==null&&w!==undefined)?'loser':'';
+            html+=`<div class="match-slot"><div class="match-card-b">
+              <div class="b-team ${c1}"><span class="b-name">${t1?esc(t1.name):'<span class="bye-label">TBD</span>'}</span><span class="b-score">${match.score1!==null&&match.score1!==undefined?match.score1:'—'}</span></div>
+              <div class="b-team ${c2}"><span class="b-name">${t2?esc(t2.name):'<span class="bye-label">TBD</span>'}</span><span class="b-score">${match.score2!==null&&match.score2!==undefined?match.score2:'—'}</span></div>
+            </div></div>`;
+          });
+          html+=`</div></div>`;
+          if(rIdx<rounds.length-1)html+=`<div class="connector"></div>`;
+          return html;
+        }).join('');
+      })()}
+      </div></div>` : ''}
+
+    </div>
+  </div>`;
+}
+
+
+// ══════════════════════════════════════════════
+// TEMPLATES
+// ══════════════════════════════════════════════
+const TEMPLATES = {
+  wc2026: {
+    name: 'FIFA World Cup 2026',
+    groups: [
+      { name: 'Group A', teams: ['Mexico', 'South Korea', 'South Africa', 'Czechia'] },
+      { name: 'Group B', teams: ['Canada', 'Switzerland', 'Qatar', 'Bosnia and Herzegovina'] },
+      { name: 'Group C', teams: ['Brazil', 'Morocco', 'Scotland', 'Haiti'] },
+      { name: 'Group D', teams: ['USA', 'Australia', 'Paraguay', 'Türkiye'] },
+      { name: 'Group E', teams: ['Germany', 'Ecuador', 'Ivory Coast', 'Curaçao'] },
+      { name: 'Group F', teams: ['Netherlands', 'Japan', 'Tunisia', 'Sweden'] },
+      { name: 'Group G', teams: ['Belgium', 'Iran', 'Egypt', 'New Zealand'] },
+      { name: 'Group H', teams: ['Spain', 'Uruguay', 'Saudi Arabia', 'Cape Verde'] },
+      { name: 'Group I', teams: ['France', 'Senegal', 'Norway', 'Iraq'] },
+      { name: 'Group J', teams: ['Argentina', 'Austria', 'Algeria', 'Jordan'] },
+      { name: 'Group K', teams: ['Portugal', 'Colombia', 'Uzbekistan', 'DR Congo'] },
+      { name: 'Group L', teams: ['England', 'Croatia', 'Panama', 'Ghana'] },
+    ],
+    groupSetup: { qualifyPer: 2, best3rd: 8, ptsWin: 3, ptsDraw: 1 },
+    split: [{ label: '1st Place', pct: 50 }, { label: '2nd Place', pct: 30 }, { label: '3rd Place', pct: 20 }],
+    info: '48 teams · 12 groups · Top 2 + 8 best 3rd qualify · Round of 32 onwards'
+  }
+};
+
+function applyTemplate(key) {
+  const t = TEMPLATES[key];
+  const info = document.getElementById('templateInfo');
+  if (!t) { info.textContent = ''; return; }
+  document.getElementById('sweepName').value = t.name;
+  teamInputs = t.groups.flatMap(g => g.teams);
+  renderTeamInputs();
+  splitRows = t.split.map(s => ({...s}));
+  renderSplitRows();
+  document.getElementById('templateSelect').dataset.key = key;
+  info.textContent = t.info;
+}
+
+function applyPendingTemplate(sweep) {
+  const sel = document.getElementById('templateSelect');
+  if (!sel) return;
+  const key = sel.dataset.key;
+  const t = TEMPLATES[key];
+  if (!t) return;
+  const groups = t.groups.map(g => ({
+    name: g.name,
+    teams: g.teams.map(name => sweep.teams.findIndex(t => t.name === name)).filter(i => i !== -1),
+    fixtures: []
+  }));
+  sweep.groups = { setup: {...t.groupSetup}, groups, editing: false };
+  sweep.groups.groups.forEach(g => {
+    g.fixtures = [];
+    for (let i = 0; i < g.teams.length; i++)
+      for (let j = i + 1; j < g.teams.length; j++)
+        g.fixtures.push({ team1: g.teams[i], team2: g.teams[j], score1: null, score2: null });
+  });
+}
+
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
@@ -1767,10 +2061,12 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
-load();
-renderSidebar();
-if (state.activeSweepId && getActive()) {
-  renderMain();
+if (!checkShareURL()) {
+  load();
+  renderSidebar();
+  if (state.activeSweepId && getActive()) {
+    renderMain();
+  }
 }
 </script>
 </body>
