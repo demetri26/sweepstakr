@@ -121,8 +121,8 @@
 
   /* TABLE */
   .data-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
-  .data-table th { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); padding: 11px 14px; text-align: left; background: var(--surface2); border-bottom: 1px solid var(--border); }
-  .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .data-table th { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); padding: 10px 10px; text-align: left; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .data-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
   .data-table tr:last-child td { border-bottom: none; }
   .data-table tr:hover td { background: rgba(255,255,255,0.02); }
 
@@ -180,14 +180,25 @@
   /* GROUP STAGE */
   .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; margin-bottom: 24px; }
   .group-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .group-card .data-table td:first-child { word-break: break-word; min-width: 80px; }
+  .team-name-cell { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
   .group-card-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
   .group-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; color: var(--gold); }
-  .group-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .group-table th { padding: 6px 10px; color: var(--text-muted); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; border-bottom: 1px solid var(--border); }
-  .group-table th:first-child { text-align: left; }
-  .group-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); text-align: center; }
-  .group-table td:first-child { text-align: left; font-weight: 500; max-width: 0; }
-  .gt-team-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+  .group-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  .group-table th { padding: 6px 2px; color: var(--text-muted); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; border-bottom: 1px solid var(--border); }
+  .group-table th:first-child { text-align: left; padding-left: 10px; width: 44%; }
+  .group-table th.gt-stat { width: 7%; }
+  .group-table th.gt-pts { width: 9%; }
+  .group-table th.gt-reorder { width: 16px; padding: 0; }
+  .group-table td { padding: 7px 2px; border-bottom: 1px solid var(--border); text-align: center; overflow: hidden; }
+  .group-table td:first-child { text-align: left; padding-left: 10px; }
+  .gt-team-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; display: block; }
+  .gt-reorder-cell { padding: 0 !important; width: 16px; text-align: center !important; }
+  .gt-reorder-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 7px; padding: 0; opacity: 0.35; transition: opacity 0.15s; line-height: 1.4; display: block; width: 100%; text-align: center; }
+  .gt-reorder-btn:hover { opacity: 1; color: var(--gold); }
+  @media (max-width: 700px) {
+    .gt-gfga { display: none; }
+  }
   .gt-participant { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; margin-top: 1px; font-weight: 400; opacity: 0.9; }
   .group-table tr:last-child td { border-bottom: none; }
   .group-table tr.qualified td:first-child { border-left: 3px solid var(--green); padding-left: 7px; }
@@ -263,6 +274,8 @@
   .status-dot.complete { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
   .no-data { color: var(--text-muted); font-size: 13px; padding: 30px 0; text-align: center; }
   .hidden { display: none !important; }
+  .btn-confirming { background: var(--red) !important; border-color: var(--red) !important; color: #fff !important; }
+
   .sidebar-footer { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end; align-items: center; }
   .sidebar-util-btn { background: none; border: none; color: var(--text-muted); font-size: 11px; font-family: 'DM Sans', sans-serif; padding: 2px 0; cursor: pointer; letter-spacing: 0.3px; transition: color 0.15s; display: inline-flex; align-items: center; line-height: 1; }
   .sidebar-util-btn:hover { color: var(--text); }
@@ -275,6 +288,21 @@
   .share-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface3); border: 1px solid var(--border); border-radius: 999px; padding: 10px 20px; font-size: 13px; color: var(--green); z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
   .share-toast.show { opacity: 1; }
 
+  .sweep-dropdown {
+    display: none;
+    width: calc(100% - 16px);
+    margin: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    cursor: pointer;
+  }
+
   /* MOBILE */
   @media (max-width: 700px) {
     .app { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
@@ -282,12 +310,11 @@
     .sidebar-header { padding: 12px 16px; border-bottom: none; border-right: 1px solid var(--border); flex-shrink: 0; }
     .logo { font-size: 20px; }
     .logo-sub { display: none; }
-    .sidebar-list { flex: 1; overflow-x: auto; overflow-y: hidden; padding: 8px 0; display: flex; align-items: center; }
+    .sidebar-list { display: none; }
+    .sweep-dropdown { display: block !important; flex: 1; margin: 8px; width: auto; }
     .sidebar-section-label { display: none; }
-    #sweepItems { display: flex; flex-direction: row; gap: 4px; padding: 0 8px; }
-    .sweep-item { padding: 6px 12px; border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; flex-shrink: 0; }
-    .sweep-item.active { border-left-color: transparent; border-bottom-color: var(--gold); }
     .btn-new { margin: 8px; width: auto; flex-shrink: 0; padding: 8px 14px; white-space: nowrap; }
+    .sidebar-footer { justify-content: flex-start; padding: 8px 12px; }
     .main { overflow: visible; }
     .topbar { position: static; flex-direction: column; align-items: flex-start; padding: 12px 14px; gap: 10px; }
     .topbar > div:last-child { width: 100%; overflow-x: auto; }
@@ -326,6 +353,7 @@
       <div class="sidebar-section-label">Competitions</div>
       <div id="sweepItems"></div>
     </div>
+    <select id="sweepDropdown" class="sweep-dropdown" onchange="selectSweep(this.value)" style="display:none"></select>
     <button class="btn-new" onclick="openNewModal()">+ New Sweepstake</button>
     <div class="sidebar-footer">
       <button class="sidebar-util-btn" onclick="exportBackup()">Export</button>
@@ -465,8 +493,10 @@ const SUFFIXES = ['st','nd','rd','th','th','th'];
 // ══════════════════════════════════════════════
 function renderSidebar() {
   const el = document.getElementById('sweepItems');
+  const dd = document.getElementById('sweepDropdown');
   if (!state.sweepstakes.length) {
     el.innerHTML = '<div style="padding:12px 20px;font-size:12px;color:var(--text-muted)">No competitions yet</div>';
+    dd.innerHTML = '<option value="">No competitions yet</option>';
     return;
   }
   el.innerHTML = state.sweepstakes.map(s => {
@@ -480,6 +510,10 @@ function renderSidebar() {
       <div class="sweep-item-name">${esc(s.name)}</div>
       <div class="sweep-item-badge">${badge}</div>
     </div>`;
+  }).join('');
+  dd.innerHTML = state.sweepstakes.map(s => {
+    const badge = s.status === 'live' ? ' · Live' : s.status === 'complete' ? ' · Done' : '';
+    return `<option value="${s.id}" ${s.id === state.activeSweepId ? 'selected' : ''}>${esc(s.name)}${badge}</option>`;
   }).join('');
 }
 
@@ -623,7 +657,7 @@ function renderOverview(s) {
     <div style="display:flex;gap:8px">
       ${s.status === 'draft' ? `<button class="btn btn-primary btn-sm" onclick="setStatus('live')">▶ Go Live</button>` : ''}
       ${s.status === 'live'  ? `<button class="btn btn-ghost btn-sm" onclick="setStatus('complete')">Mark Complete</button>` : ''}
-      <button class="btn btn-danger btn-sm" onclick="deleteSweep()">Delete</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmAction(this, deleteSweep)">Delete</button>
     </div>
   </div>`;
 }
@@ -638,7 +672,7 @@ function renderDraw(s) {
     <button class="btn btn-ghost btn-sm" onclick="doRandomDraw()">🎲 Random Draw</button>
     <button class="btn btn-ghost btn-sm" onclick="doSeededDraw()">🎯 Seeded Draw</button>
     ${unassigned > 0 ? `<button class="btn btn-ghost btn-sm" onclick="doRandomDrawUnassigned()">Random Unassigned (${unassigned})</button>` : ''}
-    <button class="btn btn-danger btn-sm" onclick="clearAllAssignments()">Clear All</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmAction(this, clearAllAssignments)">Clear All</button>
   </div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;margin-bottom:12px;font-size:12px;color:var(--text-muted)">
     💡 <strong style="color:var(--text)">Seeded Draw</strong> distributes teams so each participant receives an even spread of seeded teams. Assign seed numbers (1 = best) in the table below, then click Seeded Draw.
@@ -738,7 +772,7 @@ function renderBracketEdit(s) {
   <div class="alert alert-info" style="margin-bottom:16px">✏️ Edit mode — set the teams for each match slot, then click <strong>Confirm Bracket</strong>.</div>
   <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
     <button class="btn btn-primary btn-sm" onclick="confirmBracketSetup()">✓ Confirm Bracket</button>
-    <button class="btn btn-danger btn-sm" onclick="clearBracket()">Discard & Reset</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmAction(this, clearBracket)">Discard & Reset</button>
   </div>`;
 
   rounds.forEach((round, rIdx) => {
@@ -792,8 +826,8 @@ function buildTeamOptions(s, selectedIdx, otherIdx, slot) {
 function renderBracketView(s) {
   const { rounds } = s.bracket;
   let html = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-    <button class="btn btn-ghost btn-sm" onclick="enterBracketEditMode()">✏️ Edit Bracket</button>
-    <button class="btn btn-danger btn-sm" onclick="clearBracket()">Reset</button>
+    <button class="btn btn-ghost btn-sm" onclick="confirmAction(this, enterBracketEditMode)">✏️ Edit Bracket</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmAction(this, clearBracket)">Reset</button>
     <span style="font-size:12px;color:var(--text-muted);align-self:center">Click any match to enter a result</span>
   </div>
   <div class="bracket-wrap"><div class="bracket">`;
@@ -962,7 +996,7 @@ function renderPayouts(s) {
     <thead><tr><th>Participant</th><th>Teams</th><th>Entry Paid</th><th>Winnings</th></tr></thead>
     <tbody>
     ${s.participants.map((p, pIdx) => {
-      const myTeams = s.teams.filter(t => t.participant === pIdx);
+      const myTeams = sortTeams(s.teams.filter(t => t.participant === pIdx));
       const winTotal = s.split.reduce((acc, sp, i) => {
         const champIdx = placed[i];
         if (champIdx === undefined) return acc;
@@ -1486,7 +1520,6 @@ function setStatus(status) {
 }
 
 function deleteSweep() {
-  if (!confirm('Permanently delete this sweepstake? This cannot be undone.')) return;
   state.sweepstakes = state.sweepstakes.filter(s => s.id !== state.activeSweepId);
   state.activeSweepId = state.sweepstakes[0]?.id || null;
   currentTab = 'overview';
@@ -1570,7 +1603,7 @@ function renderGroupEdit(s) {
   <div class="alert alert-info" style="margin-bottom:14px">✏️ Edit mode — assign teams to each group slot, then click <strong>Confirm Groups</strong>.</div>
   <div class="groups-toolbar">
     <button class="btn btn-primary btn-sm" onclick="confirmGroups()">✓ Confirm Groups</button>
-    <button class="btn btn-danger btn-sm" onclick="resetGroups()">Discard & Reset</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmAction(this, resetGroups)">Discard & Reset</button>
   </div>
   <div class="groups-grid">`;
 
@@ -1612,8 +1645,8 @@ function renderGroupView(s) {
 
   let html = `
   <div class="groups-toolbar">
-    <button class="btn btn-ghost btn-sm" onclick="enterGroupEditMode()">✏️ Edit Groups</button>
-    <button class="btn btn-danger btn-sm" onclick="resetGroups()">Reset</button>
+    <button class="btn btn-ghost btn-sm" onclick="confirmAction(this, enterGroupEditMode)">✏️ Edit Groups</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmAction(this, resetGroups)">Reset</button>
   </div>
   <div class="advance-legend">
     <span><div class="legend-dot" style="background:var(--green)"></div> Qualifies (top ${setup.qualifyPer})</span>
@@ -1630,7 +1663,7 @@ function renderGroupView(s) {
         <button class="assign-btn" onclick="toggleFixtures(${gIdx})" id="fixtureToggle${gIdx}">▼ Fixtures</button>
       </div>
       <table class="group-table">
-        <thead><tr><th>Team</th><th title="Played">P</th><th title="Won">W</th><th title="Drawn">D</th><th title="Lost">L</th><th title="Goal Difference">GD</th><th title="Goals For : Goals Against">GF:GA</th><th title="Points">Pts</th></tr></thead>
+        <thead><tr><th>Team</th><th class="gt-stat" title="Played">P</th><th class="gt-stat" title="Won">W</th><th class="gt-stat" title="Drawn">D</th><th class="gt-stat" title="Lost">L</th><th class="gt-stat" title="Goal Difference">GD</th><th class="gt-gfga gt-stat" title="Goals For : Goals Against">GF:GA</th><th class="gt-pts" title="Points">Pts</th><th class="gt-reorder"></th></tr></thead>
         <tbody>`;
     st.forEach((row, pos) => {
       const isQual = pos < setup.qualifyPer;
@@ -1641,15 +1674,23 @@ function renderGroupView(s) {
       const p = pIdx !== null ? s.participants[pIdx] : null;
       const gdVal = row.gd > 0 ? '+'+row.gd : row.gd;
       const gdClass = row.gd > 0 ? 'pos' : row.gd < 0 ? 'neg' : '';
+
+      const isTiedAbove = pos > 0 && st[pos-1].pts === row.pts && st[pos-1].gd === row.gd && st[pos-1].gf === row.gf;
+      const isTiedBelow = pos < st.length-1 && st[pos+1].pts === row.pts && st[pos+1].gd === row.gd && st[pos+1].gf === row.gf;
+
+      const upBtn = isTiedAbove ? `<button class="gt-reorder-btn" onclick="swapTiebreak(${gIdx},${row.teamIdx},${st[pos-1].teamIdx})" title="Move up">▲</button>` : '';
+      const downBtn = isTiedBelow ? `<button class="gt-reorder-btn" onclick="swapTiebreak(${gIdx},${row.teamIdx},${st[pos+1].teamIdx})" title="Move down">▼</button>` : '';
+
       html += `<tr class="${rowClass}">
         <td>
-          <div class="gt-team-name">${team ? esc(team.name) : '—'}</div>
+          <div class="gt-team-name" title="${team ? esc(team.name) : ''}">${team ? esc(team.name) : '—'}</div>
           ${p ? `<div class="gt-participant" style="color:${colorFor(pIdx)}">${esc(p.name)}</div>` : ''}
         </td>
         <td>${row.p}</td><td>${row.w}</td><td>${row.d}</td><td>${row.l}</td>
         <td class="gd-cell ${gdClass}">${row.p > 0 ? gdVal : '—'}</td>
-        <td class="gd-cell" style="font-size:11px">${row.p > 0 ? `${row.gf}:${row.ga}` : '—'}</td>
+        <td class="gd-cell gt-gfga">${row.p > 0 ? `${row.gf}:${row.ga}` : '—'}</td>
         <td class="pts-cell">${row.pts}</td>
+        <td class="gt-reorder-cell">${upBtn}${downBtn}</td>
       </tr>`;
     });
     html += `</tbody></table>
@@ -1763,7 +1804,17 @@ function computeStandings(s, gIdx) {
     else if (fix.score1 < fix.score2) { r2.w++; r1.l++; r2.pts += ptsWin; }
     else { r1.d++; r2.d++; r1.pts += ptsDraw; r2.pts += ptsDraw; }
   });
-  return Object.values(rows).sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
+  const tiebreakOrder = group.tiebreakOrder || [];
+  return Object.values(rows).sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    if (b.gd !== a.gd) return b.gd - a.gd;
+    if (b.gf !== a.gf) return b.gf - a.gf;
+    // All stats equal — use manual tiebreak order if set
+    const ai = tiebreakOrder.indexOf(a.teamIdx);
+    const bi = tiebreakOrder.indexOf(b.teamIdx);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    return 0;
+  });
 }
 
 function saveFixture(gIdx, fIdx) {
@@ -1774,6 +1825,42 @@ function saveFixture(gIdx, fIdx) {
   if (s1 === '' || s2 === '') { alert('Enter both scores before saving.'); return; }
   fix.score1 = parseInt(s1); fix.score2 = parseInt(s2);
   save(); renderMain();
+}
+
+function confirmAction(btn, action) {
+  if (btn.dataset.confirming === 'true') {
+    btn.dataset.confirming = 'false';
+    btn.textContent = btn.dataset.originalText;
+    btn.classList.remove('btn-confirming');
+    action();
+    return;
+  }
+  btn.dataset.confirming = 'true';
+  btn.dataset.originalText = btn.textContent;
+  btn.textContent = 'Are you sure?';
+  btn.classList.add('btn-confirming');
+  setTimeout(() => {
+    if (btn.dataset.confirming === 'true') {
+      btn.dataset.confirming = 'false';
+      btn.textContent = btn.dataset.originalText;
+      btn.classList.remove('btn-confirming');
+    }
+  }, 3000);
+}
+
+function swapTiebreak(gIdx, teamIdxA, teamIdxB) {
+  const s = getActive();
+  if (!s) return;
+  const group = s.groups.groups[gIdx];
+  const st = computeStandings(s, gIdx);
+  // Initialise tiebreakOrder from current standings if not set
+  if (!group.tiebreakOrder || group.tiebreakOrder.length === 0)
+    group.tiebreakOrder = st.map(r => r.teamIdx);
+  const order = group.tiebreakOrder;
+  const ai = order.indexOf(teamIdxA);
+  const bi = order.indexOf(teamIdxB);
+  if (ai !== -1 && bi !== -1) { [order[ai], order[bi]] = [order[bi], order[ai]]; }
+  save(); renderTab();
 }
 
 function generateFixtures(group) {
@@ -1898,6 +1985,89 @@ function renderReadOnly(s) {
   const pot = s.participants.length * parseFloat(s.fee || 0);
   const assigned = s.teams.filter(t => t.participant !== null && t.participant !== undefined).length;
 
+  // Participant status — still in if any team not eliminated
+  const participantStatus = s.participants.map((p, i) => {
+    const myTeams = sortTeams(s.teams.filter(t => t.participant === i));
+    const stillIn = myTeams.some(t => t.status !== 'eliminated');
+    return { ...p, idx: i, myTeams, stillIn };
+  });
+  const stillIn = participantStatus.filter(p => p.stillIn);
+  const eliminated = participantStatus.filter(p => !p.stillIn);
+
+  // Groups section
+  const groupsHTML = (() => {
+    if (!s.groups || !s.groups.groups || s.groups.editing) return '';
+    return `
+    <div class="section-title" style="margin-top:28px">Groups</div>
+    <div class="groups-grid" style="margin-bottom:24px">
+      ${s.groups.groups.map(g => {
+        // Build standings
+        const standings = g.teams.map(tIdx => {
+          const team = s.teams[tIdx];
+          let w=0,d=0,l=0,gf=0,ga=0;
+          g.fixtures.forEach(f => {
+            const s1 = parseFloat(f.score1), s2 = parseFloat(f.score2);
+            if (isNaN(s1)||isNaN(s2)) return;
+            if (f.team1===tIdx) { gf+=s1;ga+=s2; if(s1>s2)w++; else if(s1===s2)d++; else l++; }
+            if (f.team2===tIdx) { gf+=s2;ga+=s1; if(s2>s1)w++; else if(s1===s2)d++; else l++; }
+          });
+          const pts = w*(s.groups.setup.ptsWin||3)+d*(s.groups.setup.ptsDraw||1);
+          return { tIdx, name: team?.name||'?', w,d,l,gf,ga,gd:gf-ga,pts };
+        }).sort((a,b) => {
+          if (b.pts !== a.pts) return b.pts - a.pts;
+          if (b.gd !== a.gd) return b.gd - a.gd;
+          if (b.gf !== a.gf) return b.gf - a.gf;
+          const order = g.tiebreakOrder || [];
+          const ai = order.indexOf(a.tIdx), bi = order.indexOf(b.tIdx);
+          if (ai !== -1 && bi !== -1) return ai - bi;
+          return 0;
+        });
+        return `<div class="group-card">
+          <div class="group-card-title">${esc(g.name)}</div>
+          <table class="data-table" style="font-size:12px">
+            <thead><tr><th>Team</th><th style="text-align:center">P</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center">GD</th><th style="text-align:center">Pts</th></tr></thead>
+            <tbody>${standings.map((t,pos)=>`<tr>
+              <td style="font-weight:500;color:${pos<(s.groups.setup.qualifyPer||2)?'var(--green)':'var(--text)'}">${esc(t.name)}</td>
+              <td style="text-align:center;color:var(--text-muted)">${t.w+t.d+t.l}</td>
+              <td style="text-align:center">${t.w}</td>
+              <td style="text-align:center">${t.d}</td>
+              <td style="text-align:center">${t.l}</td>
+              <td style="text-align:center;color:${t.gd>0?'var(--green)':t.gd<0?'var(--red)':'var(--text-muted)'}">${t.gd>0?'+':''}${t.gd}</td>
+              <td style="text-align:center;font-weight:600;color:var(--gold)">${t.pts}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>`;
+      }).join('')}
+    </div>`;
+  })();
+
+  // Bracket section
+  const bracketHTML = (() => {
+    if (!s.bracket || !s.bracket.rounds || !s.bracket.rounds.length || s.bracket.editing) return '';
+    const { rounds } = s.bracket;
+    return `
+    <div class="section-title" style="margin-top:28px">Bracket</div>
+    <div class="bracket-wrap" style="margin-bottom:24px"><div class="bracket">
+    ${rounds.map((round, rIdx) => {
+      let html = `<div class="bracket-round"><div class="round-label-wrap"><span class="round-label">${esc(round.label || defaultRoundName(rIdx, rounds.length))}</span></div><div class="round-matches">`;
+      round.matches.forEach(match => {
+        const t1 = match.team1 !== null && match.team1 !== undefined ? s.teams[match.team1] : null;
+        const t2 = match.team2 !== null && match.team2 !== undefined ? s.teams[match.team2] : null;
+        const w = match.winner;
+        const c1 = w===0?'winner':(w!==null&&w!==undefined)?'loser':'';
+        const c2 = w===1?'winner':(w!==null&&w!==undefined)?'loser':'';
+        html += `<div class="match-slot"><div class="match-card-b">
+          <div class="b-team ${c1}"><span class="b-name">${t1?esc(t1.name):'<span class="bye-label">TBD</span>'}</span><span class="b-score">${match.score1!==null&&match.score1!==undefined?match.score1:'—'}</span></div>
+          <div class="b-team ${c2}"><span class="b-name">${t2?esc(t2.name):'<span class="bye-label">TBD</span>'}</span><span class="b-score">${match.score2!==null&&match.score2!==undefined?match.score2:'—'}</span></div>
+        </div></div>`;
+      });
+      html += `</div></div>`;
+      if (rIdx < rounds.length - 1) html += `<div class="connector"></div>`;
+      return html;
+    }).join('')}
+    </div></div>`;
+  })();
+
   document.body.innerHTML = `
   <div id="shareToast" class="share-toast"></div>
   <div style="background:var(--bg);min-height:100vh;font-family:'DM Sans',sans-serif;color:var(--text)">
@@ -1905,34 +2075,48 @@ function renderReadOnly(s) {
       <div class="share-banner-text">👁 View-only snapshot · ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
       <div style="font-size:12px;color:var(--text-muted)">The organiser reshares this link when scores update</div>
     </div>
-    <div style="max-width:900px;margin:0 auto;padding:24px 16px">
+    <div style="max-width:960px;margin:0 auto;padding:24px 16px">
+
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--gold)">🏆 ${esc(s.name)}</div>
         <span class="tag">${(s.status||'draft').toUpperCase()}</span>
       </div>
 
-      <div class="stats-grid" style="margin-bottom:24px">
+      <!-- OVERVIEW STATS -->
+      <div class="stats-grid" style="margin-bottom:28px">
         <div class="stat-card"><div class="stat-label">Prize Pot</div><div class="stat-value">${s.currency}${pot.toFixed(0)}</div><div class="stat-sub">${s.participants.length} × ${fmt(s.currency,s.fee)}</div></div>
         <div class="stat-card"><div class="stat-label">Teams</div><div class="stat-value">${s.teams.length}</div><div class="stat-sub">${assigned} assigned</div></div>
         <div class="stat-card"><div class="stat-label">Participants</div><div class="stat-value">${s.participants.length}</div><div class="stat-sub">${fmt(s.currency,s.fee)} entry each</div></div>
-        <div class="stat-card"><div class="stat-label">Draw</div><div class="stat-value" style="font-size:20px;padding-top:4px;color:${assigned===s.teams.length&&s.teams.length>0?'var(--green)':'var(--gold)'}">${assigned===s.teams.length&&s.teams.length>0?'✓ Done':'⏳ Pending'}</div></div>
+        <div class="stat-card"><div class="stat-label">Still In</div><div class="stat-value" style="color:var(--green)">${stillIn.length}</div><div class="stat-sub">${eliminated.length} eliminated</div></div>
       </div>
 
-      <div class="section-title">Participants & Teams</div>
-      <table class="data-table" style="margin-bottom:24px">
+      <!-- PARTICIPANTS STILL IN -->
+      <div class="section-title">Still In 🟢</div>
+      <table class="data-table" style="margin-bottom:16px">
         <thead><tr><th>Participant</th><th>Teams</th></tr></thead>
         <tbody>
-        ${s.participants.map((p,i)=>{
-          const myTeams = s.teams.filter(t=>t.participant===i);
-          return `<tr>
-            <td><div class="participant-badge"><div class="avatar" style="background:${colorFor(i)};color:#0f0e0c">${initials(p.name)}</div>${esc(p.name)}</div></td>
-            <td style="font-size:12px">${myTeams.map(t=>`<span style="margin-right:6px;opacity:${t.status==='eliminated'?0.4:1};text-decoration:${t.status==='eliminated'?'line-through':'none'}">${esc(t.name)}</span>`).join('')||'<span style="color:var(--text-muted)">None</span>'}</td>
-          </tr>`;
-        }).join('')}
+        ${stillIn.length ? stillIn.map(p => `<tr>
+          <td><div class="participant-badge"><div class="avatar" style="background:${colorFor(p.idx)};color:#0f0e0c">${initials(p.name)}</div>${esc(p.name)}</div></td>
+          <td style="font-size:12px">${p.myTeams.map(t=>`<span style="margin-right:6px;opacity:${t.status==='eliminated'?0.4:1};text-decoration:${t.status==='eliminated'?'line-through':'none'}">${esc(t.name)}</span>`).join('') || '<span style="color:var(--text-muted)">None</span>'}</td>
+        </tr>`).join('') : `<tr><td colspan="2" style="color:var(--text-muted);font-style:italic">Draw not yet completed</td></tr>`}
         </tbody>
       </table>
 
-      <div class="section-title">Payouts</div>
+      <!-- PARTICIPANTS ELIMINATED -->
+      ${eliminated.length ? `
+      <div class="section-title" style="margin-top:20px">Eliminated ❌</div>
+      <table class="data-table" style="margin-bottom:24px">
+        <thead><tr><th>Participant</th><th>Teams</th></tr></thead>
+        <tbody>
+        ${eliminated.map(p => `<tr style="opacity:0.5">
+          <td><div class="participant-badge"><div class="avatar" style="background:${colorFor(p.idx)};color:#0f0e0c">${initials(p.name)}</div>${esc(p.name)}</div></td>
+          <td style="font-size:12px">${p.myTeams.map(t=>`<span style="margin-right:6px;text-decoration:line-through">${esc(t.name)}</span>`).join('') || '<span style="color:var(--text-muted)">None</span>'}</td>
+        </tr>`).join('')}
+        </tbody>
+      </table>` : ''}
+
+      <!-- PAYOUTS -->
+      <div class="section-title" style="margin-top:${eliminated.length?'4px':'28px'}">Payouts</div>
       <div class="payout-card" style="margin-bottom:24px">
         ${(()=>{
           const placed=[];
@@ -1968,35 +2152,27 @@ function renderReadOnly(s) {
         })()}
       </div>
 
-      ${s.bracket&&s.bracket.rounds&&s.bracket.rounds.length&&!s.bracket.editing ? `
-      <div class="section-title">Bracket</div>
-      <div class="bracket-wrap"><div class="bracket">
-      ${(()=>{
-        const {rounds}=s.bracket;
-        return rounds.map((round,rIdx)=>{
-          let html=`<div class="bracket-round"><div class="round-label-wrap"><span class="round-label">${esc(round.label||defaultRoundName(rIdx,rounds.length))}</span></div><div class="round-matches">`;
-          round.matches.forEach((match,mIdx)=>{
-            const t1=(match.team1!==null&&match.team1!==undefined)?s.teams[match.team1]:null;
-            const t2=(match.team2!==null&&match.team2!==undefined)?s.teams[match.team2]:null;
-            const w=match.winner;
-            const c1=w===0?'winner':(w!==null&&w!==undefined)?'loser':'';
-            const c2=w===1?'winner':(w!==null&&w!==undefined)?'loser':'';
-            html+=`<div class="match-slot"><div class="match-card-b">
-              <div class="b-team ${c1}"><span class="b-name">${t1?esc(t1.name):'<span class="bye-label">TBD</span>'}</span><span class="b-score">${match.score1!==null&&match.score1!==undefined?match.score1:'—'}</span></div>
-              <div class="b-team ${c2}"><span class="b-name">${t2?esc(t2.name):'<span class="bye-label">TBD</span>'}</span><span class="b-score">${match.score2!==null&&match.score2!==undefined?match.score2:'—'}</span></div>
-            </div></div>`;
-          });
-          html+=`</div></div>`;
-          if(rIdx<rounds.length-1)html+=`<div class="connector"></div>`;
-          return html;
-        }).join('');
-      })()}
-      </div></div>` : ''}
+      <!-- GROUPS -->
+      ${groupsHTML}
+
+      <!-- BRACKET -->
+      ${bracketHTML}
 
     </div>
   </div>`;
 }
 
+
+
+function sortTeams(teams) {
+  return [...teams].sort((a, b) => {
+    const aSeeded = a.seed != null, bSeeded = b.seed != null;
+    if (aSeeded && bSeeded) return a.seed - b.seed;
+    if (aSeeded) return -1;
+    if (bSeeded) return 1;
+    return a.name.localeCompare(b.name);
+  });
+}
 
 // ══════════════════════════════════════════════
 // EXPORT / IMPORT
