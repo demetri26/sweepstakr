@@ -1943,12 +1943,10 @@ function shareSweepstake() {
   try {
     const json = JSON.stringify(s);
     const compressed = LZString.compressToEncodedURIComponent(json);
-    const url = `${location.href.split('#')[0]}#share=${compressed}`;
+    const base = 'https://sweepstakr.app/app.html';
+    const url = `${base}#share=${compressed}`;
     navigator.clipboard.writeText(url).then(() => showToast('🔗 Link copied to clipboard!'))
-      .catch(() => {
-        // Fallback: prompt with the URL
-        prompt('Copy this link to share:', url);
-      });
+      .catch(() => { prompt('Copy this link to share:', url); });
   } catch(e) {
     alert('Could not generate share link. The sweepstake may be too large.');
   }
@@ -1963,7 +1961,21 @@ function showToast(msg) {
 
 function checkShareURL() {
   const hash = location.hash;
-  if (!hash.startsWith('#share=')) return false;
+  if (!hash.startsWith('#share=')) {
+    // No share hash — show buy page instead of the app
+    document.body.innerHTML = `
+    <div style="background:#0f0e0c;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;color:#f0ece4;text-align:center;padding:24px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;color:#f0b429;margin-bottom:8px">🏆 Sweepstakr</div>
+      <div style="font-size:15px;color:#8a8070;margin-bottom:32px;max-width:360px">Run the perfect sweepstake. Group stages, knockout brackets, custom payouts and shareable links.</div>
+      <a href="https://sweepstakr.lemonsqueezy.com/checkout/buy/2c847aad-5a73-4750-92c3-f2bc37f91fe3"
+        style="background:#f0b429;color:#0f0e0c;font-weight:700;font-size:16px;padding:14px 36px;border-radius:6px;text-decoration:none;margin-bottom:16px;display:inline-block">
+        Buy now — £2.99
+      </a>
+      <div style="font-size:12px;color:#8a8070">One-time payment · No subscription · No account required</div>
+      <div style="margin-top:40px;font-size:12px;color:#3a3733">Looking for a share link? Ask your sweepstake organiser to reshare it.</div>
+    </div>`;
+    return true;
+  }
   try {
     const compressed = hash.slice(7);
     const json = LZString.decompressFromEncodedURIComponent(compressed);
