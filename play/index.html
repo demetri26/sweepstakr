@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src https://tinyurl.com;">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sweepstakr">
@@ -1995,16 +1995,27 @@ function removeGroup(gIdx) {
 let readOnlyMode = false;
 let readOnlySweep = null;
 
-function shareSweepstake() {
+async function shareSweepstake() {
   const s = getActive();
   if (!s) return;
   try {
     const json = JSON.stringify(s);
     const compressed = LZString.compressToEncodedURIComponent(json);
-    const base = 'https://sweepstakr.app/play';
-    const url = `${base}#share=${compressed}`;
-    navigator.clipboard.writeText(url).then(() => showToast('🔗 Link copied to clipboard!'))
-      .catch(() => { prompt('Copy this link to share:', url); });
+    const longUrl = `https://sweepstakr.app/play#share=${compressed}`;
+    showToast('⏳ Generating link...');
+    try {
+      const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+      if (!res.ok) throw new Error('TinyURL failed');
+      const shortUrl = await res.text();
+      navigator.clipboard.writeText(shortUrl)
+        .then(() => showToast('🔗 Short link copied!'))
+        .catch(() => { prompt('Copy this link to share:', shortUrl); });
+    } catch {
+      // Fallback to long URL if TinyURL fails
+      navigator.clipboard.writeText(longUrl)
+        .then(() => showToast('🔗 Link copied to clipboard!'))
+        .catch(() => { prompt('Copy this link to share:', longUrl); });
+    }
   } catch(e) {
     alert('Could not generate share link. The sweepstake may be too large.');
   }
