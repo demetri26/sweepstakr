@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src https://tinyurl.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src https://tinyurl.com https://is.gd;">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sweepstakr">
@@ -2003,19 +2003,22 @@ async function shareSweepstake() {
     const compressed = LZString.compressToEncodedURIComponent(json);
     const longUrl = `https://sweepstakr.app/play#share=${compressed}`;
     showToast('⏳ Generating link...');
-    try {
-      const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-      if (!res.ok) throw new Error('TinyURL failed');
-      const shortUrl = await res.text();
-      navigator.clipboard.writeText(shortUrl)
-        .then(() => showToast('🔗 Short link copied!'))
-        .catch(() => { prompt('Copy this link to share:', shortUrl); });
-    } catch {
-      // Fallback to long URL if TinyURL fails
-      navigator.clipboard.writeText(longUrl)
-        .then(() => showToast('🔗 Link copied to clipboard!'))
-        .catch(() => { prompt('Copy this link to share:', longUrl); });
-    }
+    const shorten = async (url) => {
+      try {
+        const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
+        if (r.ok) { const t = await r.text(); if (t.startsWith('http')) return t; }
+      } catch {}
+      try {
+        const r = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(url)}`);
+        if (r.ok) { const t = await r.text(); if (t.startsWith('http')) return t; }
+      } catch {}
+      return url;
+    };
+    const finalUrl = await shorten(longUrl);
+    const isShort = finalUrl !== longUrl;
+    navigator.clipboard.writeText(finalUrl)
+      .then(() => showToast(isShort ? '🔗 Short link copied!' : '🔗 Link copied to clipboard!'))
+      .catch(() => { prompt('Copy this link to share:', finalUrl); });
   } catch(e) {
     alert('Could not generate share link. The sweepstake may be too large.');
   }
