@@ -2093,15 +2093,22 @@ function renderReadOnly(s) {
           <div class="group-card-title">${esc(g.name)}</div>
           <table class="data-table" style="font-size:12px">
             <thead><tr><th>Team</th><th style="text-align:center">P</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center">GD</th><th style="text-align:center">Pts</th></tr></thead>
-            <tbody>${standings.map((t,pos)=>`<tr>
-              <td style="font-weight:500;color:${pos<(s.groups.setup.qualifyPer||2)?'var(--green)':'var(--text)'}">${esc(t.name)}</td>
+            <tbody>${standings.map((t,pos)=>{
+              const team = s.teams[t.tIdx];
+              const pIdx = team?.participant ?? null;
+              const p = (pIdx !== null && pIdx !== undefined) ? s.participants[pIdx] : null;
+              return `<tr>
+              <td style="font-weight:500;color:${pos<(s.groups.setup.qualifyPer||2)?'var(--green)':'var(--text)'}">
+                ${esc(t.name)}
+                ${p ? `<div style="font-size:10px;font-weight:400;opacity:0.8;color:${colorFor(pIdx)};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</div>` : ''}
+              </td>
               <td style="text-align:center;color:var(--text-muted)">${t.w+t.d+t.l}</td>
               <td style="text-align:center">${t.w}</td>
               <td style="text-align:center">${t.d}</td>
               <td style="text-align:center">${t.l}</td>
               <td style="text-align:center;color:${t.gd>0?'var(--green)':t.gd<0?'var(--red)':'var(--text-muted)'}">${t.gd>0?'+':''}${t.gd}</td>
               <td style="text-align:center;font-weight:600;color:var(--gold)">${t.pts}</td>
-            </tr>`).join('')}</tbody>
+            </tr>`;}).join('')}</tbody>
           </table>
         </div>`;
       }).join('')}
