@@ -49,12 +49,13 @@
     font-size: 22px; letter-spacing: 3px; color: var(--gold);
   }
   .nav-cta {
-    background: var(--gold); color: var(--bg);
-    font-size: 13px; font-weight: 700;
+    background: transparent; color: var(--gold);
+    font-size: 13px; font-weight: 600;
     padding: 8px 18px; border-radius: var(--radius);
-    text-decoration: none; transition: background 0.2s;
+    text-decoration: none; border: 1px solid var(--gold);
+    transition: all 0.2s;
   }
-  .nav-cta:hover { background: #f5c84a; }
+  .nav-cta:hover { background: var(--gold); color: var(--bg); }
 
   /* HERO */
   .hero {
@@ -279,7 +280,7 @@
 
 <nav>
   <div class="nav-logo">🏆 Sweepstakr</div>
-  <a href="https://sweepstakr.lemonsqueezy.com/checkout/buy/2c847aad-5a73-4750-92c3-f2bc37f91fe3" class="nav-cta">Buy — £2.99</a>
+  <a href="https://sweepstakr.app/play" class="nav-cta">Use Free Online</a>
 </nav>
 
 <div class="hero">
@@ -302,13 +303,13 @@
 
   <div class="hero-eyebrow">Built for the 2026 World Cup — and every tournament after</div>
   <h1>Run the<br><span>Perfect</span><br>Sweepstake</h1>
-  <p class="hero-sub">Group stages, knockout brackets, custom payouts, and shareable links — everything your group needs in one tool.</p>
+  <p class="hero-sub">Group stages, knockout brackets, custom payouts, and shareable links — everything your group needs in one free tool.</p>
 
   <div class="hero-actions">
-    <a href="https://sweepstakr.lemonsqueezy.com/checkout/buy/2c847aad-5a73-4750-92c3-f2bc37f91fe3" class="btn-primary">Buy now — £2.99</a>
+    <a href="https://sweepstakr.app/play" class="btn-primary">Use Free Online</a>
     <a href="#features" class="btn-ghost">See what's inside</a>
   </div>
-  <div class="hero-price"><strong>One-time payment.</strong> No subscription. No account required.</div>
+  <div class="hero-price">Free to use. No account required. <strong>Forever.</strong></div>
 </div>
 
 <div class="tournament-banner">
@@ -346,7 +347,7 @@
   <div class="section-label">How it works</div>
   <h2>Up and running<br>in minutes</h2>
   <div class="steps">
-    <div class="step"><div class="step-num">1</div><div class="step-title">Buy & Open</div><div class="step-desc">Purchase once, download the file, open it in any browser. No installation, no account.</div></div>
+    <div class="step"><div class="step-num">1</div><div class="step-title">Open the App</div><div class="step-desc">Visit sweepstakr.app/play in any browser. No download, no account, no setup.</div></div>
     <div class="step"><div class="step-num">2</div><div class="step-title">Pick a Template</div><div class="step-desc">Select the World Cup 2026 template or build your own from scratch.</div></div>
     <div class="step"><div class="step-num">3</div><div class="step-title">Add Participants & Draw</div><div class="step-desc">Enter your group, set the entry fee and prize split, and run the draw.</div></div>
     <div class="step"><div class="step-num">4</div><div class="step-title">Share & Track</div><div class="step-desc">Enter results as the tournament progresses and share the live link with your group.</div></div>
@@ -369,16 +370,14 @@
 </section>
 
 <div class="cta-section" id="buy">
-  <div class="section-label">Get Sweepstakr</div>
-  <h2>One price.<br>Yours forever.</h2>
-  <p>No subscription. No account. No nonsense.<br>Buy once, use for every tournament.</p>
-  <div class="price-display">
-    <div class="price-amount">£2.99</div>
-    <div class="price-label">one-time</div>
+  <div class="section-label">Support Sweepstakr</div>
+  <h2>Free to use.<br>Forever.</h2>
+  <p>Sweepstakr is free for everyone, no strings attached.<br>If it's saved you some hassle, a coffee goes a long way.</p>
+  <div style="margin-bottom:28px;margin-top:28px">
+    <a href="https://sweepstakr.lemonsqueezy.com/checkout/buy/2c847aad-5a73-4750-92c3-f2bc37f91fe3" class="btn-primary" style="font-size:17px;padding:16px 40px">☕ Buy me a coffee — £3</a>
   </div>
-  <br>
-  <a href="https://sweepstakr.lemonsqueezy.com/checkout/buy/2c847aad-5a73-4750-92c3-f2bc37f91fe3" class="btn-primary" style="font-size:17px;padding:16px 40px">Buy now — £2.99</a>
-  <div style="margin-top:16px;font-size:12px;color:var(--muted)">Secure payment · Instant download</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:8px">You'll also get the downloadable desktop edition — handy if you prefer to work offline.</div>
+  <div style="font-size:11px;color:var(--muted);opacity:0.8">No pressure. The app is yours either way.</div>
 </div>
 
 <footer>
