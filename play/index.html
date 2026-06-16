@@ -2148,6 +2148,10 @@ function renderReadOnly(s) {
   document.body.innerHTML = `
   <div id="shareToast" class="share-toast"></div>
   <div style="background:var(--bg);min-height:100vh;font-family:'DM Sans',sans-serif;color:var(--text)">
+    <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold)">🏆 Sweepstakr</div>
+      <a href="https://sweepstakr.app/play" target="_blank" style="font-size:12px;color:var(--text-muted);text-decoration:none;border:1px solid var(--border);padding:5px 12px;border-radius:4px;transition:color 0.15s" onmouseover="this.style.color='var(--gold)';this.style.borderColor='var(--gold)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border)'">Run your own free sweepstake →</a>
+    </div>
     <div class="share-banner">
       <div class="share-banner-text">👁 View-only snapshot · ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
       <div style="font-size:12px;color:var(--text-muted)">The organiser reshares this link when scores update</div>
