@@ -301,6 +301,12 @@
 
   /* MOBILE PORTRAIT */
   @media (max-width: 932px) and (max-height: 932px) and (hover: none) and (orientation: portrait) {
+    /* Prevent iOS Safari auto-zoom on input focus — requires 16px minimum */
+    input[type=text], input[type=number], select, textarea,
+    .fixture-score-input, .score-input, .split-label-input, .split-pct-wrap input,
+    .list-input-row input, .sweep-dropdown {
+      font-size: 16px !important;
+    }
     .app { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; display: flex; }
     .app-footer { display: block; }
     .sidebar-support-link { display: none; }
@@ -365,6 +371,11 @@
 
   /* MOBILE LANDSCAPE — desktop sidebar layout */
   @media (max-width: 932px) and (max-height: 932px) and (hover: none) and (orientation: landscape) {
+    input[type=text], input[type=number], select, textarea,
+    .fixture-score-input, .score-input, .split-label-input, .split-pct-wrap input,
+    .list-input-row input {
+      font-size: 16px !important;
+    }
     .app { flex-direction: row; height: 100vh; overflow: hidden; }
     .main { overflow-y: auto; }
     .sidebar { width: 220px; height: 100vh; border-right: 1px solid var(--border); border-bottom: none; display: flex; flex-direction: column; overflow: hidden; }
