@@ -202,6 +202,10 @@
   .gt-reorder-cell { padding: 0 !important; width: 16px; text-align: center !important; }
   .gt-reorder-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 7px; padding: 0; opacity: 0.35; transition: opacity 0.15s; line-height: 1.4; display: block; width: 100%; text-align: center; }
   .gt-reorder-btn:hover { opacity: 1; color: var(--gold); }
+  .gt-eliminated { opacity: 0.45; }
+  .gt-eliminated .gt-team-name { text-decoration: line-through; }
+  .gt-elim-btn { background: none; border: none; cursor: pointer; font-size: 13px; padding: 0 2px; opacity: 0.5; transition: opacity 0.15s; line-height: 1; }
+  .gt-elim-btn:hover { opacity: 1; }
   .gt-participant { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; margin-top: 1px; font-weight: 400; opacity: 0.9; }
   .group-table tr:last-child td { border-bottom: none; }
   .group-table tr.qualified td:first-child { border-left: 3px solid var(--green); padding-left: 7px; }
@@ -1735,32 +1739,46 @@ function renderGroupView(s) {
       <table class="group-table">
         <thead><tr><th>Team</th><th class="gt-stat" title="Played">P</th><th class="gt-stat" title="Won">W</th><th class="gt-stat" title="Drawn">D</th><th class="gt-stat" title="Lost">L</th><th class="gt-stat" title="Goal Difference">GD</th><th class="gt-gfga gt-stat" title="Goals For : Goals Against">GF:GA</th><th class="gt-pts" title="Points">Pts</th><th class="gt-reorder"></th></tr></thead>
         <tbody>`;
+    const { autoElim, manualElim } = computeElimination(s, gIdx, st);
+    st.forEach(row => {
+      const isElim = autoElim.has(row.teamIdx) || manualElim.has(row.teamIdx);
+      if (s.teams[row.teamIdx]) {
+        s.teams[row.teamIdx].status = isElim ? 'eliminated' : (s.teams[row.teamIdx].participant !== null ? 'active' : 'pending');
+      }
+    });
     st.forEach((row, pos) => {
       const isQual = pos < setup.qualifyPer;
       const is3rd = !isQual && pos === setup.qualifyPer && best3rdTeams.has(row.teamIdx);
-      const rowClass = isQual ? 'qualified' : is3rd ? 'qualified-3rd' : '';
+      const isAutoElim = autoElim.has(row.teamIdx);
+      const isManualElim = manualElim.has(row.teamIdx);
+      const isElim = isAutoElim || isManualElim;
+      const rowClass = isElim ? 'gt-eliminated' : isQual ? 'qualified' : is3rd ? 'qualified-3rd' : '';
       const team = s.teams[row.teamIdx];
       const pIdx = team?.participant ?? null;
       const p = pIdx !== null ? s.participants[pIdx] : null;
       const gdVal = row.gd > 0 ? '+'+row.gd : row.gd;
       const gdClass = row.gd > 0 ? 'pos' : row.gd < 0 ? 'neg' : '';
 
-      const isTiedAbove = pos > 0 && st[pos-1].pts === row.pts && st[pos-1].gd === row.gd && st[pos-1].gf === row.gf;
-      const isTiedBelow = pos < st.length-1 && st[pos+1].pts === row.pts && st[pos+1].gd === row.gd && st[pos+1].gf === row.gf;
+      const isTiedAbove = !isElim && pos > 0 && st[pos-1].pts === row.pts && st[pos-1].gd === row.gd && st[pos-1].gf === row.gf;
+      const isTiedBelow = !isElim && pos < st.length-1 && st[pos+1].pts === row.pts && st[pos+1].gd === row.gd && st[pos+1].gf === row.gf;
 
       const upBtn = isTiedAbove ? `<button class="gt-reorder-btn" onclick="swapTiebreak(${gIdx},${row.teamIdx},${st[pos-1].teamIdx})" title="Move up">▲</button>` : '';
       const downBtn = isTiedBelow ? `<button class="gt-reorder-btn" onclick="swapTiebreak(${gIdx},${row.teamIdx},${st[pos+1].teamIdx})" title="Move down">▼</button>` : '';
+      const elimBtn = !isAutoElim ? `<button class="gt-elim-btn" onclick="toggleManualElimination(${gIdx},${row.teamIdx})" title="${isManualElim ? 'Unmark eliminated' : 'Mark eliminated'}">🔴</button>` : '';
 
       html += `<tr class="${rowClass}">
         <td>
+          <div style="display:flex;align-items:center;gap:4px">
           <div class="gt-team-name" title="${team ? esc(team.name) : ''}">${team ? esc(team.name) : '—'}</div>
+            ${isAutoElim ? '<span style="font-size:9px;color:var(--red);letter-spacing:0.5px;white-space:nowrap">OUT</span>' : ''}
+          </div>
           ${p ? `<div class="gt-participant" style="color:${colorFor(pIdx)}">${esc(p.name)}</div>` : ''}
         </td>
         <td>${row.p}</td><td>${row.w}</td><td>${row.d}</td><td>${row.l}</td>
         <td class="gd-cell ${gdClass}">${row.p > 0 ? gdVal : '—'}</td>
         <td class="gd-cell gt-gfga">${row.p > 0 ? `${row.gf}:${row.ga}` : '—'}</td>
         <td class="pts-cell">${row.pts}</td>
-        <td class="gt-reorder-cell">${upBtn}${downBtn}</td>
+        <td class="gt-reorder-cell">${elimBtn}${upBtn}${downBtn}</td>
       </tr>`;
     });
     html += `</tbody></table>
@@ -1885,6 +1903,49 @@ function computeStandings(s, gIdx) {
     if (ai !== -1 && bi !== -1) return ai - bi;
     return 0;
   });
+}
+
+function computeElimination(s, gIdx, st) {
+  const group = s.groups.groups[gIdx];
+  const { ptsWin, qualifyPer, best3rd } = s.groups.setup;
+  const manualElim = new Set(group.manualEliminated || []);
+
+  const remaining = {};
+  group.teams.filter(t => t !== null).forEach(tIdx => { remaining[tIdx] = 0; });
+  group.fixtures.forEach(fix => {
+    if (fix.score1 === null || fix.score2 === null) {
+      if (remaining[fix.team1] !== undefined) remaining[fix.team1]++;
+      if (remaining[fix.team2] !== undefined) remaining[fix.team2]++;
+    }
+  });
+
+  const qualSpots = best3rd > 0 ? qualifyPer + 1 : qualifyPer;
+  const thresholdRow = st[qualSpots - 1];
+  const threshold = thresholdRow ? thresholdRow.pts : 0;
+
+  const autoElim = new Set();
+  st.forEach(row => {
+    const maxPts = row.pts + remaining[row.teamIdx] * ptsWin;
+    if (maxPts < threshold) autoElim.add(row.teamIdx);
+  });
+
+  return { autoElim, manualElim };
+}
+
+function toggleManualElimination(gIdx, teamIdx) {
+  const s = getActive();
+  if (!s) return;
+  const group = s.groups.groups[gIdx];
+  if (!group.manualEliminated) group.manualEliminated = [];
+  const idx = group.manualEliminated.indexOf(teamIdx);
+  if (idx === -1) {
+    group.manualEliminated.push(teamIdx);
+    if (s.teams[teamIdx]) s.teams[teamIdx].status = 'eliminated';
+  } else {
+    group.manualEliminated.splice(idx, 1);
+    if (s.teams[teamIdx]) s.teams[teamIdx].status = 'active';
+  }
+  save(); renderTab();
 }
 
 function saveFixture(gIdx, fIdx) {
@@ -2112,9 +2173,15 @@ function renderReadOnly(s) {
               const team = s.teams[t.tIdx];
               const pIdx = team?.participant ?? null;
               const p = (pIdx !== null && pIdx !== undefined) ? s.participants[pIdx] : null;
-              return `<tr>
-              <td style="font-weight:500;color:${pos<(s.groups.setup.qualifyPer||2)?'var(--green)':'var(--text)'}">
-                ${esc(t.name)}
+              const manualEliminated = g.manualEliminated || [];
+              const isElim = team?.status === 'eliminated' || manualEliminated.includes(t.tIdx);
+              const qualColor = isElim ? 'var(--text-muted)' : pos<(s.groups.setup.qualifyPer||2) ? 'var(--green)' : 'var(--text)';
+              return `<tr style="opacity:${isElim?0.45:1}">
+              <td style="font-weight:500;color:${qualColor}">
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span style="${isElim?'text-decoration:line-through':''}">${esc(t.name)}</span>
+                  ${isElim?'<span style="font-size:9px;color:var(--red);white-space:nowrap">OUT</span>':''}
+                </div>
                 ${p ? `<div style="font-size:10px;font-weight:400;opacity:0.8;color:${colorFor(pIdx)};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</div>` : ''}
               </td>
               <td style="text-align:center;color:var(--text-muted)">${t.w+t.d+t.l}</td>
