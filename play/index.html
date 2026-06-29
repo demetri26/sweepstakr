@@ -153,6 +153,16 @@
   .bracket-round { display: flex; flex-direction: column; min-width: 190px; }
   .round-label-wrap { display: flex; align-items: center; gap: 6px; padding: 0 12px 14px; justify-content: center; }
   .round-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); text-align: center; }
+  .round-label-toggle { cursor: pointer; user-select: none; transition: color 0.15s; }
+  .round-label-toggle:hover .round-label { color: var(--text); }
+  .round-collapse-icon { font-size: 8px; color: var(--text-muted); margin-right: 4px; }
+  .bracket-round-collapsed { min-width: 220px; }
+  .round-collapsed-list { display: flex; flex-direction: column; gap: 3px; padding: 0 8px; max-height: 600px; overflow-y: auto; }
+  .round-collapsed-match { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 8px; background: var(--surface2); border-radius: 3px; border: 1px solid var(--border); }
+  .round-collapsed-done { opacity: 0.6; }
+  .rc-winner { color: var(--green); font-weight: 600; }
+  .rc-loser { color: var(--text-muted); text-decoration: line-through; }
+  .rc-vs { color: var(--text-muted); font-size: 10px; flex-shrink: 0; }
   .round-label-edit { font-size: 10px; background: transparent; border: none; border-bottom: 1px dashed var(--border); color: var(--text-muted); font-family: 'DM Sans', sans-serif; letter-spacing: 1px; text-transform: uppercase; outline: none; width: 110px; text-align: center; cursor: text; padding: 1px 4px; }
   .round-label-edit:focus { border-bottom-color: var(--gold); color: var(--text); }
   .round-matches { display: flex; flex-direction: column; flex: 1; justify-content: space-around; }
@@ -459,6 +469,8 @@
       <select id="templateSelect" onchange="applyTemplate(this.value)" style="max-width:100%">
         <option value="">— Start blank —</option>
         <option value="wc2026">&#127757; FIFA World Cup 2026</option>
+        <option value="wimbledon2026m">🎾 Wimbledon 2026 — Men's Singles</option>
+        <option value="wimbledon2026w">🎾 Wimbledon 2026 — Women's Singles</option>
       </select>
       <div id="templateInfo" style="font-size:11px;color:var(--text-muted);margin-top:5px"></div>
     </div>
@@ -897,45 +909,82 @@ function buildTeamOptions(s, selectedIdx, otherIdx, slot) {
     }).join('');
 }
 
+function toggleRoundCollapse(rIdx) {
+  const s = getActive();
+  if (!s || !s.bracket) return;
+  if (!s.bracket.collapsedRounds) s.bracket.collapsedRounds = [];
+  const idx = s.bracket.collapsedRounds.indexOf(rIdx);
+  if (idx === -1) s.bracket.collapsedRounds.push(rIdx);
+  else s.bracket.collapsedRounds.splice(idx, 1);
+  save(); renderTab();
+}
+
 function renderBracketView(s) {
   const { rounds } = s.bracket;
+
+  // Default: collapse rounds with more than 8 matches
+  if (!s.bracket.collapsedRounds) {
+    s.bracket.collapsedRounds = rounds
+      .map((r, i) => r.matches.length > 8 ? i : null)
+      .filter(i => i !== null);
+  }
+  const collapsed = new Set(s.bracket.collapsedRounds);
+
   let html = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
     <button class="btn btn-ghost btn-sm" onclick="confirmAction(this, enterBracketEditMode)">✏️ Edit Bracket</button>
     <button class="btn btn-danger btn-sm" onclick="confirmAction(this, clearBracket)">Reset</button>
     <span style="font-size:12px;color:var(--text-muted);align-self:center">Click any match to enter a result</span>
   </div>
   <div class="bracket-wrap"><div class="bracket">`;
-
-  rounds.forEach((round, rIdx) => {
-    html += `<div class="bracket-round">
-      <div class="round-label-wrap"><span class="round-label">${esc(round.label || defaultRoundName(rIdx, rounds.length))}</span></div>
-      <div class="round-matches">`;
-
-    round.matches.forEach((match, mIdx) => {
-      const t1 = (match.team1 !== null && match.team1 !== undefined) ? s.teams[match.team1] : null;
-      const t2 = (match.team2 !== null && match.team2 !== undefined) ? s.teams[match.team2] : null;
-      const w = match.winner;
-      const c1 = w === 0 ? 'winner' : (w !== null && w !== undefined) ? 'loser' : '';
-      const c2 = w === 1 ? 'winner' : (w !== null && w !== undefined) ? 'loser' : '';
-
-      html += `<div class="match-slot">
-        <div class="match-card-b clickable" onclick="openBracketResult(${rIdx},${mIdx})">
-          <div class="b-team ${c1}">
-            <span class="b-name">${t1 ? esc(t1.name) : '<span class="bye-label">TBD</span>'}</span>
-            <span class="b-score">${match.score1 !== null && match.score1 !== undefined ? match.score1 : '—'}</span>
-          </div>
-          <div class="b-team ${c2}">
-            <span class="b-name">${t2 ? esc(t2.name) : '<span class="bye-label">TBD</span>'}</span>
-            <span class="b-score">${match.score2 !== null && match.score2 !== undefined ? match.score2 : '—'}</span>
-          </div>
-        </div>
+    rounds.forEach((round, rIdx) => {
+      const isCollapsed = collapsed.has(rIdx);
+      const roundName = esc(round.label || defaultRoundName(rIdx, rounds.length));
+      const matchCount = round.matches.length;
+      html += `<div class="bracket-round ${isCollapsed ? 'bracket-round-collapsed' : ''}">
+      <div class="round-label-wrap round-label-toggle" onclick="toggleRoundCollapse(${rIdx})" title="${isCollapsed ? 'Expand round' : 'Collapse round'}">
+        <span class="round-collapse-icon">${isCollapsed ? '▶' : '▼'}</span>
+        <span class="round-label">${roundName}</span>
+        ${isCollapsed ? `<span style="font-size:10px;color:var(--text-muted);margin-left:4px">(${matchCount} matches)</span>` : ''}
       </div>`;
+      if (isCollapsed) {
+        html += `<div class="round-collapsed-list">`;
+        round.matches.forEach((match) => {
+          const t1 = match.team1 !== null && match.team1 !== undefined ? s.teams[match.team1] : null;
+          const t2 = match.team2 !== null && match.team2 !== undefined ? s.teams[match.team2] : null;
+          const hasWinner = match.winner !== null && match.winner !== undefined;
+          html += `<div class="round-collapsed-match ${hasWinner ? 'round-collapsed-done' : ''}">
+            <span class="${hasWinner && match.winner === 0 ? 'rc-winner' : hasWinner ? 'rc-loser' : ''}">${t1 ? esc(t1.name) : 'TBD'}</span>
+            <span class="rc-vs">v</span>
+            <span class="${hasWinner && match.winner === 1 ? 'rc-winner' : hasWinner ? 'rc-loser' : ''}">${t2 ? esc(t2.name) : 'TBD'}</span>
+          </div>`;
+        });
+        html += `</div>`;
+      } else {
+        html += `<div class="round-matches">`;
+        round.matches.forEach((match, mIdx) => {
+          const t1 = (match.team1 !== null && match.team1 !== undefined) ? s.teams[match.team1] : null;
+          const t2 = (match.team2 !== null && match.team2 !== undefined) ? s.teams[match.team2] : null;
+          const w = match.winner;
+          const c1 = w === 0 ? 'winner' : (w !== null && w !== undefined) ? 'loser' : '';
+          const c2 = w === 1 ? 'winner' : (w !== null && w !== undefined) ? 'loser' : '';
+          html += `<div class="match-slot">
+            <div class="match-card-b clickable" onclick="openBracketResult(${rIdx},${mIdx})">
+              <div class="b-team ${c1}">
+                <span class="b-name">${t1 ? esc(t1.name) : '<span class="bye-label">TBD</span>'}</span>
+                <span class="b-score">${match.score1 !== null && match.score1 !== undefined ? match.score1 : '—'}</span>
+              </div>
+              <div class="b-team ${c2}">
+                <span class="b-name">${t2 ? esc(t2.name) : '<span class="bye-label">TBD</span>'}</span>
+                <span class="b-score">${match.score2 !== null && match.score2 !== undefined ? match.score2 : '—'}</span>
+              </div>
+            </div>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+      if (rIdx < rounds.length - 1) html += `<div class="connector"></div>`;
     });
-
-    html += `</div></div>`;
-    if (rIdx < rounds.length - 1) html += `<div class="connector"></div>`;
-  });
-
   html += `</div></div>`;
 
   // Champion banner
@@ -2406,6 +2455,54 @@ const TEMPLATES = {
     groupSetup: { qualifyPer: 2, best3rd: 8, ptsWin: 3, ptsDraw: 1 },
     split: [{ label: '1st Place', pct: 50 }, { label: '2nd Place', pct: 30 }, { label: '3rd Place', pct: 20 }],
     info: '48 teams · 12 groups · Top 2 + 8 best 3rd qualify · Round of 32 onwards'
+  },
+  wimbledon2026m: {
+    name: "Wimbledon 2026 — Men's Singles",
+    bracketOnly: true,
+    teams: [
+      'Sinner', 'Kecmanovic', 'Borges', 'Boyer', 'Vukic', 'Brooksby', 'Nava', 'Buse',
+      'Jodar', 'Gill', 'Shapovalov', 'Carreno Busta', 'Mochizuki', 'Basing', 'Quinn', 'Darderi',
+      'Ruud', 'Hurkacz', 'Medjedovic', 'Ofner', 'Kwon', 'Landaluce', 'Muller', 'Paul',
+      'Nakashima', 'Pinnington Jones', 'Struff', 'Baez', 'Ugo Carabelli', 'Merida', 'Cilic', 'Medvedev',
+      'Auger-Aliassime', 'Shevchenko', 'Walton', 'Prizmic', 'Vallejo', 'Mejia', 'Zheng M.', 'Norrie',
+      'Davidovich Fokina', 'Cerundolo J.M.', 'Tirante', 'Marozsan', 'Van Assche', 'Fucsovics', 'Svrcina', 'Tien',
+      'Rublev', 'Safiullin', 'Kovacevic', 'Van de Zandschulp', 'De Jong', 'Hijikata', 'Bautista Agut', 'Fonseca',
+      'Rinderknech', 'Tarvet', 'Trungelliti', 'Damm', 'Gaston', 'Tsitsipas', 'Wu', 'Djokovic',
+      'De Minaur', 'Burruchaga', 'Mannarino', 'Droguet', 'Llamas Ruiz', 'Svajda', 'Majchrzak', 'Tabilo',
+      'Khachanov', 'Harris B.', 'Hanfmann', 'Mpetshi Perricard', 'Griekspoor', 'Duckworth', 'Navone', 'Cobolli',
+      'Mensik', 'Samuel', 'Sweeny', 'Dimitrov', 'Wawrinka', 'Berrettini', 'Collignon', 'Fils',
+      'Humbert', 'Bergs', 'Shimabukuro', 'Faria', 'Dzumhur', 'Fery', 'Virtanen', 'Shelton',
+      'Fritz', 'Draper', 'Kypson', 'McDonald', 'Bonzi', 'Diallo', 'Sonego', 'Etcheverry',
+      'Tiafoe', 'Atmane', 'Kopriva', 'Choinski', 'Jacquet', 'Gaubas', 'Kokkinakis', 'Bublik',
+      'Lehecka', 'Popyrin', 'Molcan', 'Altmaier', 'Michelsen', 'Fearnley', 'Munar', 'Cerundolo F.',
+      'Arnaldi', 'Halys', 'Moutet', 'Giron', 'Royer', 'Wendelken', 'Blockx', 'Zverev'
+    ],
+    split: [{ label: '1st Place', pct: 50 }, { label: '2nd Place', pct: 30 }, { label: '3rd Place', pct: 20 }],
+    info: '128 players · 7 rounds · Bracket only · Wimbledon 2026'
+  },
+  wimbledon2026w: {
+    name: "Wimbledon 2026 — Women's Singles",
+    bracketOnly: true,
+    teams: [
+      'Sabalenka', 'Kostovic', 'Oliynykova', 'Kessler', 'Ostapenko', 'Dart', 'Ruzic', 'Raducanu',
+      'Fernandez', 'Tjen', 'Xu', 'Kasatkina', 'Gasanova', 'Arango', 'Jacquemot', 'Osaka',
+      'Muchova', 'Zakharova', 'Andreescu', 'Zhang S.', 'Parks', 'Dudeney', 'Sawangkaew', 'Chwalinska',
+      'Siniakova', 'Zheng Q.', 'Stearns', 'Bartunkova', 'Krejcikova', 'Klugman', 'Linette', 'Andreeva',
+      'Pegula', 'Vidmanova', 'Sorribes Tormo', 'Jimenez Kasintseva', 'Yastremska', 'Ito', 'Bouzas Maneiro', 'Potapova',
+      'Alexandrova', 'Udvardy', 'Tararudee', 'Tagger', 'Putintseva', 'Maria', 'Cristian', 'Jovic',
+      'Bencic', 'Stojsavljevic', 'Wang X.', 'Cocciaretto', 'Jones F.', 'Parry', 'Frech', 'Kalinskaya',
+      'Li A.', 'Sonmez', 'Liu C.', 'Vandewinkel', 'Sierra', 'Bondar', 'Korpatsch', 'Gauff',
+      'Svitolina', 'Snigur', 'Erjavec', 'Jeanjean', 'Tomljanovic', 'Bolkvadze', 'Krueger', 'Vekic',
+      'Navarro', 'Badosa', 'Selekhmeteva', 'Kraus', 'Starodubtseva', 'Blinkova', 'Podoroska', 'Kostyuk',
+      'Paolini', 'Montgomery', 'Shymanovich', 'Golubic', 'Kalinina', 'Rakhimova', 'Sakkari', 'Tauson',
+      'Eala', 'Zarazua', 'S. Williams', 'Joint', 'Valentova', 'Pliskova', 'Townsend', 'Swiatek',
+      'Anisimova', 'Gjorcheska', 'Marcinko', 'Kenin', 'Begu', 'Swan', 'Day', 'Keys',
+      'Cirstea', 'Bejlek', 'Birrell', 'Korneeva', 'Osorio', 'Waltert', 'Seidel', 'Noskova',
+      'Shnaider', 'Lys', 'Kudermetova', 'Samsonova', 'Boulter', 'Grant', 'Gibson', 'Bouzkova',
+      'Mertens', 'Siegemund', 'Haddad Maia', 'Timofeeva', 'Ruse', 'McNally', 'Boisson', 'Rybakina'
+    ],
+    split: [{ label: '1st Place', pct: 50 }, { label: '2nd Place', pct: 30 }, { label: '3rd Place', pct: 20 }],
+    info: "128 players · 7 rounds · Bracket only · Wimbledon 2026"
   }
 };
 
@@ -2414,7 +2511,7 @@ function applyTemplate(key) {
   const info = document.getElementById('templateInfo');
   if (!t) { info.textContent = ''; return; }
   document.getElementById('sweepName').value = t.name;
-  teamInputs = t.groups.flatMap(g => g.teams);
+  teamInputs = t.bracketOnly ? [...t.teams] : t.groups.flatMap(g => g.teams);
   renderTeamInputs();
   splitRows = t.split.map(s => ({...s}));
   renderSplitRows();
@@ -2428,6 +2525,29 @@ function applyPendingTemplate(sweep) {
   const key = sel.dataset.key;
   const t = TEMPLATES[key];
   if (!t) return;
+  if (t.bracketOnly) {
+    sweep.groups = null;
+    const numTeams = sweep.teams.length;
+    const numRounds = Math.log2(numTeams);
+    if (!Number.isInteger(numRounds)) return;
+    const rounds = [];
+    for (let r = 0; r < numRounds; r++) {
+      const matchCount = Math.pow(2, numRounds - 1 - r);
+      let matches;
+      if (r === 0) {
+        matches = [];
+        for (let m = 0; m < matchCount; m++) {
+          matches.push({ team1: m * 2, team2: m * 2 + 1, score1: null, score2: null, winner: null });
+        }
+      } else {
+        matches = Array.from({ length: matchCount }, () => ({ team1: null, team2: null, score1: null, score2: null, winner: null }));
+      }
+      rounds.push({ label: defaultRoundName(r, numRounds), matches });
+    }
+    sweep.bracket = { rounds, editing: false };
+    sweep.teams.forEach(tm => { if (tm.participant !== null && tm.participant !== undefined) tm.status = 'active'; });
+    return;
+  }
   const groups = t.groups.map(g => ({
     name: g.name,
     teams: g.teams.map(name => sweep.teams.findIndex(t => t.name === name)).filter(i => i !== -1),
